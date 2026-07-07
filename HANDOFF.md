@@ -77,13 +77,24 @@
   - `/admin?key=ADMIN_SECRET` 관리 페이지: DB 연결 시 출처별 현황+최근 60건+삭제,
     미연결 시 실시간 수집 통계(0건 소스 경고 표시). ADMIN_SECRET은 .env.local에 있음
 
+## 배포 완료 (2026-07-07)
+
+- **프로덕션: https://moa-social.vercel.app** (Vercel Hobby, 함수 리전 icn1 서울)
+- 저장소: https://github.com/dongown012/moa (공개 — 개인정보는 공개 전 제거, 히스토리 정리됨)
+- DB: Vercel Storage → Neon Postgres(무료). 첫 수집으로 스키마 자동 생성, 220건 저장, db 모드 동작 확인
+- 수집 트리거 3중: Vercel Cron(매일 KST 06시) + GitHub Actions(하루 5회, APP_URL·CRON_SECRET
+  시크릿 등록 완료) + 홈 재생성 시 after() 백그라운드 수집
+- 기업마당: Vercel에서도 정상 수집 (IP 등록 제한 없음 확인)
+- **알려진 한계: 아름다운재단 계열 3개 피드(행사·연구보고서·기부문화연구소)는 Vercel에서 0건**
+  — 로컬·타 클라우드에선 정상이라 해당 기관 방화벽의 AWS IP 차단으로 추정.
+  대안: GitHub Actions 러너(Azure IP)에서 직접 수집해 DB에 넣는 방식 검토 가능
+- 키 관리: 모든 비밀값은 로컬 `moa/.env.local` + Vercel 환경변수 + GitHub Secrets에만 존재
+
 ## 남은 작업 (다음 단계 후보)
 
-- Vercel 배포 (사용자 Vercel 계정 필요) → Storage에서 Postgres 생성(자동으로 DATABASE_URL 주입)
-  → 환경변수(BIZINFO_API_KEY, CRON_SECRET, ADMIN_SECRET) 등록 → `vercel.json`에 Cron 등록
-- 배포 후 확인: /api/collect 1회 호출(스키마 생성+첫 수집) → 홈이 db 모드로 뜨는지,
-  기업마당 수집이 되는지(IP 등록 이슈 — 안 되면 URL 방식 재신청)
-- 서비스 차원 고민(배포 후): WEEKLY 뉴스레터 발송, 검색 개선, 모바일 UX
+- 서비스 차원 고민: WEEKLY 뉴스레터 발송(스티비 등), 검색 개선, 모바일 UX, 커스텀 도메인
+- 아름다운재단 계열 피드 우회 수집 (GitHub Actions 러너 활용)
+- 채용·교육 항목의 published_at이 "최초 수집일"로 굳는 구조 — DB 모드라 자연스럽게 해결됨
 
 ## 실행 방법
 
