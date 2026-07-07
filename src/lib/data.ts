@@ -1,0 +1,114 @@
+import type { Item } from "./types";
+import { ensureSchema, getDb } from "./db";
+import { MOCK_ITEMS } from "./mock-data";
+import { fetchRssItems, type CollectStats } from "./rss";
+import { fetchBizinfoGrants } from "./grants";
+import { fetchImpactCareerJobs, fetchImpactCareerPrograms } from "./jobs";
+import { fetchOrangeLetterItems } from "./orange";
+import { fetchHiaiReports } from "./hiai";
+import { kstDayOffset } from "./dates";
+
+// 같은 보도자료를 여러 매체가 그대로 싣는 경우가 있어 제목(기호·공백 제거)으로도 중복 제거
+const normTitle = (t: string) => t.replace(/[^가-힣a-zA-Z0-9]/g, "");
+
+// 전 소스를 한 번에 수집 — 페이지 렌더링과 /api/collect가 공유.
+// stats의 0건 소스는 피드 장애/사이트 개편 신호입니다.
+export async function collectLiveItems(): Promise<{ items: Item[]; stats: CollectStats }> {
+  const [rss, grants, jobs, programs, orange, hiai] = await Promise.all([
+    fetchRssItems(),
+    fetchBizinfoGrants(),
+    fetchImpactCareerJobs(),
+    fetchImpactCareerPrograms(),
+    fetchOrangeLetterItems(),
+    fetchHiaiReports(),
+  ]);
+  const stats: CollectStats = {
+    ...rss.stats,
+    "기업마당/grant": grants.length,
+    "임팩트닷커리어/job": jobs.length,
+    "임팩트닷커리어/edu": programs.length,
+    "오렌지레터/전섹션": orange.length,
+    "홍익지능/lib": hiai.length,
+  };
+  for (const [src, n] of Object.entries(stats)) {
+    if (n === 0) console.warn(`[수집 경고] ${src}: 0건 — 피드 장애 또는 사이트 개편 가능성`);
+  }
+
+  const seenUrl = new Set<string>();
+  const seenTitle = new Set<string>();
+  const items = [...rss.items, ...grants, ...jobs, ...programs, ...orange, ...hiai].filter((i) => {
+    const t = normTitle(i.title);
+    if (seenUrl.has(i.url) || (t && seenTitle.has(t))) return false;
+    seenUrl.add(i.url);
+    seenTitle.add(t);
+    return true;
+  });
+  return { items, stats };
+}
+
+// 수집 + DB 저장까지 한 번에 — /api/collect(Vercel Cron)와 홈 재생성 시 after()가 공유.
+// 스키마는 최초 실행 때 자동 생성. DB 미설정이면 저장 없이 통계만 반환합니다.
+export async function collectAndStore() {
+  const { items, stats } = await collectLiveItems();
+  const zeroSources = Object.entries(stats)
+    .filter(([, n]) => n === 0)
+    .map(([src]) => src);
+
+  const sql = getDb();
+  let upserted: number | null = null;
+  if (sql && items.length > 0) {
+    await ensureSchema(sql);
+    // id는 DB가 생성(identity)하므로 제외. url unique 충돌 시 기존 행 유지.
+    const rows = items.map(({ id: _id, ...rest }) => rest);
+    const result = await sql`
+      insert into items ${sql(rows, "title", "summary", "source", "url", "category", "extra", "published_at", "deadline")}
+      on conflict (url) do nothing`;
+    upserted = result.count;
+  }
+  return { collected: items.length, upserted, stats, zeroSources };
+}
+
+// 마감일 없는 모임·행사는 무한정 남으므로 발행 60일이 지나면 숨깁니다 (db·live 공통)
+function hideStaleEvents(items: Item[]): Item[] {
+  const cutoff = kstDayOffset(-60);
+  return items.filter(
+    (i) => !(i.category === "event" && !i.deadline && i.published_at < cutoff)
+  );
+}
+
+// 데이터 출처 3단계:
+//   db   — Supabase 환경변수(.env.local)가 있으면 DB에서 조회
+//   live — DB가 없으면 뉴스는 실시간 RSS로, 채용·지원사업 등 RSS 없는 카테고리는 목업으로 병합
+//   mock — RSS까지 전부 실패하면 목업 전체
+export type DataMode = "db" | "live" | "mock";
+
+export async function getItems(): Promise<{ items: Item[]; mode: DataMode }> {
+  const sql = getDb();
+  if (sql) {
+    try {
+      const rows = await sql`
+        select id::int as id, title, summary, source, url, category, extra,
+               to_char(published_at, 'YYYY-MM-DD') as published_at,
+               to_char(deadline, 'YYYY-MM-DD') as deadline
+        from items
+        order by published_at desc, id desc
+        limit 300`;
+      // 첫 수집 전(빈 테이블)에는 live로 폴백
+      if (rows.length > 0) {
+        return { items: hideStaleEvents(rows as unknown as Item[]), mode: "db" };
+      }
+    } catch (e) {
+      console.error("DB 조회 실패, RSS/목업으로 대체:", e instanceof Error ? e.message : e);
+    }
+  }
+
+  const { items: liveItems } = await collectLiveItems();
+  if (liveItems.length === 0) {
+    return { items: MOCK_ITEMS, mode: "mock" };
+  }
+
+  // 실데이터가 없는 카테고리만 목업으로 채워 데모 완결성 유지
+  const liveCats = new Set(liveItems.map((i) => i.category));
+  const fillers = MOCK_ITEMS.filter((i) => !liveCats.has(i.category));
+  return { items: hideStaleEvents([...liveItems, ...fillers]), mode: "live" };
+}

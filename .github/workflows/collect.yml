@@ -1,0 +1,22 @@
+# 배포된 모아의 수집 엔드포인트를 주기 호출 — Vercel 무료 플랜의 'Cron 하루 1회' 제약 우회.
+# 필요한 저장소 시크릿: APP_URL (배포 주소, 예: https://moa-xxx.vercel.app), CRON_SECRET
+name: collect
+
+on:
+  schedule:
+    - cron: "0 22,1,4,7,10 * * *" # KST 07/10/13/16/19시 (UTC 기준)
+  workflow_dispatch: {} # 수동 실행 버튼
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call /api/collect
+        run: |
+          set -e
+          RES=$(curl -sf --max-time 90 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/collect")
+          echo "$RES"
+          # 0건 소스가 있으면 로그에서 눈에 띄게 (실패 처리는 하지 않음)
+          echo "$RES" | grep -o '"zeroSources":\[[^]]*\]'
