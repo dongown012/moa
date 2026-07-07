@@ -30,6 +30,32 @@ export function stripHtml(html: string): string {
 export const truncate = (s: string, max = 160) =>
   s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s;
 
+// 뉴스 요약 다듬기:
+// 1) 언론사 RSS 특유의 바이라인 제거 — "이로운넷 = 조은결 기자..." ("기자" 뒤 공백 없이 본문이 붙기도 함)
+// 2) 문장 중간이 아닌 문장 끝에서 자르기 (안 되면 길이 기준으로 폴백)
+export function cleanSummary(raw: string, max = 150): string {
+  const s = raw
+    .replace(
+      /^[가-힣A-Za-z0-9·]{2,14}\s*=\s*[가-힣]{2,5}\s*(수습기자|객원기자|인턴기자|기자|편집위원|칼럼니스트|에디터|피디|PD)\s*/,
+      ""
+    )
+    .replace(/^\[[가-힣A-Za-z0-9·=\s]{2,20}\]\s*/, "")
+    .replace(/^[|·\-—=\s]+/, "") // 피드 찌꺼기 (선두 구분 기호)
+    // 피드가 문장 사이 공백을 지우는 경우 복원: "밝혔다.신협" → "밝혔다. 신협" (소수점은 안 건드림)
+    .replace(/(다|요|음|함|임)\.(?=[가-힣("'‘“])/g, "$1. ")
+    .trim();
+  if (s.length <= max) return s;
+  const head = s.slice(0, max + 20);
+  // 마지막 문장 종결 위치에서 자르기 — 피드에 따라 마침표 뒤 공백 없이 다음 문장이 붙기도 함
+  let end = -1;
+  const re = /(다|요|음|함|임)\.|[?!](?=\s|$)/g;
+  for (const m of head.matchAll(re)) {
+    const pos = m.index! + m[0].length;
+    if (pos <= max + 10) end = pos;
+  }
+  return end > 40 ? s.slice(0, end) : truncate(s, max);
+}
+
 // URL을 FNV-1a 해시로 안정적인 숫자 id로 — 재수집해도 id가 같아 북마크가 유지됩니다.
 export function urlToId(url: string): number {
   let h = 0x811c9dc5;
@@ -56,11 +82,11 @@ async function fetchFeed(feed: FeedDef, today: string): Promise<Item[]> {
     .filter((it) => it.title && it.link)
     .slice(0, feed.limit ?? 12)
     .map((it) => {
-      const summary = stripHtml(it.contentSnippet ?? it.content ?? it.summary ?? "");
+      const summary = cleanSummary(stripHtml(it.contentSnippet ?? it.content ?? it.summary ?? ""));
       return {
         id: urlToId(it.link!),
         title: stripHtml(it.title!),
-        summary: summary ? truncate(summary) : null,
+        summary: summary || null,
         source: feed.name,
         url: it.link!,
         category: feed.category,

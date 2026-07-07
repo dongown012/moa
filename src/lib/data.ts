@@ -1,7 +1,7 @@
 import type { Item } from "./types";
 import { ensureSchema, getDb } from "./db";
 import { MOCK_ITEMS } from "./mock-data";
-import { fetchRssItems, type CollectStats } from "./rss";
+import { cleanSummary, fetchRssItems, type CollectStats } from "./rss";
 import { fetchBizinfoGrants } from "./grants";
 import { fetchImpactCareerJobs, fetchImpactCareerPrograms } from "./jobs";
 import { fetchOrangeLetterItems } from "./orange";
@@ -95,7 +95,12 @@ export async function getItems(): Promise<{ items: Item[]; mode: DataMode }> {
         limit 300`;
       // 첫 수집 전(빈 테이블)에는 live로 폴백
       if (rows.length > 0) {
-        return { items: hideStaleEvents(rows as unknown as Item[]), mode: "db" };
+        // 요약 정리 개선 전에 저장된 행에도 바이라인 제거가 적용되도록 조회 시 한 번 더
+        const items = (rows as unknown as Item[]).map((i) => ({
+          ...i,
+          summary: i.summary ? cleanSummary(i.summary) : null,
+        }));
+        return { items: hideStaleEvents(items), mode: "db" };
       }
     } catch (e) {
       console.error("DB 조회 실패, RSS/목업으로 대체:", e instanceof Error ? e.message : e);
