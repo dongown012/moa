@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Item, Category } from "@/lib/types";
 import { CATS, CAT_LABEL, EXCLUDE_FROM_ALL } from "@/lib/types";
 import type { DataMode } from "@/lib/data";
@@ -62,6 +62,39 @@ export default function HomeClient({
   const [activeCat, setActiveCat] = useState<Category | "all">("all");
   const [query, setQuery] = useState("");
   const [nlMsg, setNlMsg] = useState("");
+  const [nlBusy, setNlBusy] = useState(false);
+
+  // 카테고리 딥링크: ?cat=job 으로 진입하면 해당 탭을 열고, 탭 전환 시 URL도 갱신
+  useEffect(() => {
+    const cat = new URLSearchParams(window.location.search).get("cat");
+    if (cat && CATS.some((c) => c.id === cat)) setActiveCat(cat as Category | "all");
+  }, []);
+  const switchCat = (cat: Category | "all") => {
+    setActiveCat(cat);
+    const url = cat === "all" ? window.location.pathname : `?cat=${cat}`;
+    window.history.replaceState(null, "", url);
+  };
+
+  const subscribe = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const email = new FormData(form).get("email");
+    setNlBusy(true);
+    try {
+      const res = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      setNlMsg(data.message ?? "잠시 후 다시 시도해주세요.");
+      if (data.ok) form.reset();
+    } catch {
+      setNlMsg("잠시 후 다시 시도해주세요.");
+    } finally {
+      setNlBusy(false);
+    }
+  };
 
   const dday = (dl: string) =>
     Math.ceil((parseDate(dl).getTime() - parseDate(today).getTime()) / 86400000);
@@ -199,7 +232,7 @@ export default function HomeClient({
             <button
               key={c.id}
               className={`tab${c.id === activeCat ? " active" : ""}`}
-              onClick={() => setActiveCat(c.id)}
+              onClick={() => switchCat(c.id)}
             >
               {c.label}
               <span className="cnt">{countOf(c.id)}</span>
@@ -276,15 +309,17 @@ export default function HomeClient({
             </h2>
             <p>NEWSLETTER — 지원사업 · 채용 · 행사 마감 요약, 매주 월 07:00 발송</p>
           </div>
-          <form
-            className="nl-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              setNlMsg("구독 기능은 준비 중입니다 — 곧 만나요!");
-            }}
-          >
-            <input type="email" required placeholder="이메일 주소" aria-label="이메일 주소" />
-            <button type="submit">구독</button>
+          <form className="nl-form" onSubmit={subscribe}>
+            <input
+              type="email"
+              name="email"
+              required
+              placeholder="이메일 주소"
+              aria-label="이메일 주소"
+            />
+            <button type="submit" disabled={nlBusy}>
+              {nlBusy ? "..." : "구독"}
+            </button>
           </form>
         </div>
         {nlMsg && (

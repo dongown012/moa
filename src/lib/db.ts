@@ -41,4 +41,11 @@ export async function ensureSchema(sql: NonNullable<ReturnType<typeof getDb>>) {
     )`;
   await sql`create index if not exists clicks_item_idx on clicks (item_id)`;
   await sql`create index if not exists clicks_created_idx on clicks (created_at desc)`;
+  // WEEKLY 뉴스레터 구독 이메일 — 발송 기능 전이라도 주소는 지금부터 모읍니다
+  await sql`
+    create table if not exists subscribers (
+      id         bigint generated always as identity primary key,
+      email      text not null unique,
+      created_at timestamptz not null default now()
+    )`;
 }

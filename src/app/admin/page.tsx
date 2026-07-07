@@ -69,7 +69,7 @@ export default async function AdminPage({
     );
   }
 
-  const [totals, recent, topClicks, dailyClicks] = await Promise.all([
+  const [totals, recent, topClicks, dailyClicks, subscribers] = await Promise.all([
     sql`select source, count(*)::int as cnt, max(created_at)::date::text as last
         from items group by source order by cnt desc`,
     sql`select id::int as id, title, source, category,
@@ -85,6 +85,8 @@ export default async function AdminPage({
     sql`select to_char(created_at at time zone 'Asia/Seoul', 'MM-DD') as day, count(*)::int as clicks
         from clicks where created_at > now() - interval '7 days'
         group by day order by day desc`.catch(() => []),
+    sql`select email, created_at::date::text as at from subscribers
+        order by id desc limit 20`.catch(() => []),
   ]);
   const total = totals.reduce((s, r) => s + (r.cnt as number), 0);
   const weekClicks = dailyClicks.reduce((s, r) => s + (r.clicks as number), 0);
@@ -134,6 +136,13 @@ export default async function AdminPage({
           )}
         </tbody>
       </table>
+
+      <h2>뉴스레터 구독 신청 (최근 20)</h2>
+      <p style={{ color: "#888", margin: "4px 0 12px" }}>
+        {subscribers.length === 0
+          ? "아직 신청이 없습니다"
+          : subscribers.map((r) => `${r.email as string} (${r.at as string})`).join(" · ")}
+      </p>
 
       <h2>최근 항목 60건</h2>
       <table style={{ borderCollapse: "collapse", width: "100%" }}>

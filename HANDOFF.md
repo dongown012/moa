@@ -90,11 +90,25 @@
   대안: GitHub Actions 러너(Azure IP)에서 직접 수집해 DB에 넣는 방식 검토 가능
 - 키 관리: 모든 비밀값은 로컬 `moa/.env.local` + Vercel 환경변수 + GitHub Secrets에만 존재
 
+## 서비스 개선 (2026-07-07 저녁)
+
+- 클릭 분석: clicks 테이블 + sendBeacon(/api/click) → /admin에 7일 인기 TOP15·일별 추이
+- Vercel Web Analytics 삽입 (방문·유입 — **대시보드 Analytics 탭에서 Enable 필요**)
+- SAVE(북마크) 제거 (회원 기능 도입 시 git 히스토리에서 복원)
+- 모바일 가독성: 한 열 배치·행간 상향·word-break:keep-all·통계 2×2 그리드
+- 날짜 그룹 내 출처 라운드로빈 (같은 매체 연속 방지)
+- OG 이미지(src/app/opengraph-image.png, sharp로 생성) + 메타데이터
+- 뉴스레터 이메일 수집: subscribers 테이블 + /api/subscribe + 폼 연동 (/admin에 목록)
+- 자체 RSS 제공: /rss (원문 링크로 연결, 50건)
+- sitemap.xml + robots.txt (admin·api는 크롤 차단)
+- 카테고리 딥링크: /?cat=job 형태 (클라이언트에서 처리해 ISR 유지)
+
 ## 남은 작업 (다음 단계 후보)
 
-- 서비스 차원 고민: WEEKLY 뉴스레터 발송(스티비 등), 검색 개선, 모바일 UX, 커스텀 도메인
+- 검색엔진 등록 (구글 서치콘솔·네이버 서치어드바이저 — 사용자 계정 필요)
+- WEEKLY 뉴스레터 실제 발송 (구독자는 모이는 중)
 - 아름다운재단 계열 피드 우회 수집 (GitHub Actions 러너 활용)
-- 채용·교육 항목의 published_at이 "최초 수집일"로 굳는 구조 — DB 모드라 자연스럽게 해결됨
+- 커스텀 도메인
 
 ## 실행 방법
 
