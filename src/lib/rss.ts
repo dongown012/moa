@@ -5,7 +5,7 @@ import { kstDateString } from "./dates";
 
 // 언론사 서버가 기본 UA를 차단하는 경우가 있어 브라우저 UA를 흉내냅니다.
 const parser = new Parser({
-  timeout: 8000,
+  timeout: 15000, // 워드프레스 피드는 동적 생성이라 해외 리전에서 8초를 넘기도 함
   headers: {
     "User-Agent":
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
