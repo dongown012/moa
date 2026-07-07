@@ -32,4 +32,13 @@ export async function ensureSchema(sql: NonNullable<ReturnType<typeof getDb>>) {
   await sql`create index if not exists items_published_at_idx on items (published_at desc)`;
   await sql`create index if not exists items_deadline_idx on items (deadline) where deadline is not null`;
   await sql`create index if not exists items_category_idx on items (category, published_at desc)`;
+  // 콘텐츠 클릭 기록 — 어떤 항목이 읽히는지 /admin에서 집계
+  await sql`
+    create table if not exists clicks (
+      id         bigint generated always as identity primary key,
+      item_id    bigint not null,
+      created_at timestamptz not null default now()
+    )`;
+  await sql`create index if not exists clicks_item_idx on clicks (item_id)`;
+  await sql`create index if not exists clicks_created_idx on clicks (created_at desc)`;
 }

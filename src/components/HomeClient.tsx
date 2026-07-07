@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { Item, Category } from "@/lib/types";
 import { CATS, CAT_LABEL, EXCLUDE_FROM_ALL } from "@/lib/types";
 import type { DataMode } from "@/lib/data";
+
+const DOW = ["일", "월", "화", "수", "목", "금", "토"];
+const pad = (n: number) => String(n).padStart(2, "0");
+// "YYYY-MM-DD"를 로컬 자정 기준 Date로 (타임존 밀림 방지)
+const parseDate = (s: string) => new Date(`${s}T00:00:00`);
 
 // live 모드에서 수집 실패한 카테고리는 목업(example.com)으로 채워지므로 실제 항목을 보고 판단
 const modeNote = (mode: DataMode, items: Item[]) => {
@@ -13,10 +18,37 @@ const modeNote = (mode: DataMode, items: Item[]) => {
   return hasFiller ? " (실시간 수집 · 일부 카테고리는 예시 데이터)" : " (실시간 수집)";
 };
 
-const DOW = ["일", "월", "화", "수", "목", "금", "토"];
-const pad = (n: number) => String(n).padStart(2, "0");
-// "YYYY-MM-DD"를 로컬 자정 기준 Date로 (타임존 밀림 방지)
-const parseDate = (s: string) => new Date(`${s}T00:00:00`);
+// 같은 매체가 연속으로 나오지 않도록 날짜 그룹 안에서 출처를 라운드로빈으로 배치
+const interleaveBySource = (rows: Item[]): Item[] => {
+  const buckets = new Map<string, Item[]>();
+  for (const r of rows) {
+    if (!buckets.has(r.source)) buckets.set(r.source, []);
+    buckets.get(r.source)!.push(r);
+  }
+  const lists = [...buckets.values()];
+  const out: Item[] = [];
+  for (let picked = true; picked; ) {
+    picked = false;
+    for (const l of lists) {
+      const x = l.shift();
+      if (x) {
+        out.push(x);
+        picked = true;
+      }
+    }
+  }
+  return out;
+};
+
+// 어떤 콘텐츠가 읽히는지 보기 위한 클릭 기록 (원문 이동은 막지 않음)
+const trackClick = (id: number) => {
+  try {
+    navigator.sendBeacon(
+      "/api/click",
+      new Blob([JSON.stringify({ id })], { type: "application/json" })
+    );
+  } catch {}
+};
 
 export default function HomeClient({
   items,
@@ -29,28 +61,10 @@ export default function HomeClient({
 }) {
   const [activeCat, setActiveCat] = useState<Category | "all">("all");
   const [query, setQuery] = useState("");
-  const [bookmarks, setBookmarks] = useState<Set<number>>(new Set());
   const [nlMsg, setNlMsg] = useState("");
 
   const dday = (dl: string) =>
     Math.ceil((parseDate(dl).getTime() - parseDate(today).getTime()) / 86400000);
-
-  // 북마크 localStorage 복원/저장
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem("moa-bookmarks") ?? "[]");
-      if (Array.isArray(saved)) setBookmarks(new Set(saved));
-    } catch {}
-  }, []);
-  const toggleBm = (id: number) => {
-    setBookmarks((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      localStorage.setItem("moa-bookmarks", JSON.stringify([...next]));
-      return next;
-    });
-  };
 
   // 마스트헤드 통계
   const stats = useMemo(() => {
@@ -80,7 +94,7 @@ export default function HomeClient({
       ? items.filter((i) => !EXCLUDE_FROM_ALL.includes(i.category)).length
       : items.filter((i) => i.category === cat).length;
 
-  // 필터링된 목록 → 날짜별 그룹
+  // 필터링된 목록 → 날짜별 그룹 (그룹 안에서는 출처 라운드로빈)
   const groups = useMemo(() => {
     let list =
       activeCat === "all"
@@ -101,7 +115,9 @@ export default function HomeClient({
       if (!map.has(i.published_at)) map.set(i.published_at, []);
       map.get(i.published_at)!.push(i);
     }
-    return [...map.entries()];
+    return [...map.entries()].map(
+      ([date, rows]) => [date, interleaveBySource(rows)] as const
+    );
   }, [items, activeCat, query]);
 
   const todayDate = parseDate(today);
@@ -167,6 +183,7 @@ export default function HomeClient({
                 target="_blank"
                 rel="noopener noreferrer"
                 className={d <= 5 ? "urgent" : ""}
+                onClick={() => trackClick(i.id)}
               >
                 <b>D-{d}</b>
                 {i.title}
@@ -192,7 +209,7 @@ export default function HomeClient({
         <p className="feed-note">
           {activeCat === "all"
             ? "지원사업 공고는 지원사업 탭에서 따로 모아 보실 수 있습니다."
-            : " "}
+            : " "}
         </p>
 
         <div className="feed">
@@ -214,13 +231,17 @@ export default function HomeClient({
                   <div className="rows">
                     {rows.map((it) => {
                       const d = it.deadline ? dday(it.deadline) : null;
-                      const saved = bookmarks.has(it.id);
                       return (
                         <article className="row" key={it.id}>
                           <span className="row-cat">{CAT_LABEL[it.category]}</span>
                           <div>
                             <h3>
-                              <a href={it.url} target="_blank" rel="noopener noreferrer">
+                              <a
+                                href={it.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={() => trackClick(it.id)}
+                              >
                                 {it.title}
                               </a>
                             </h3>
@@ -235,14 +256,6 @@ export default function HomeClient({
                               )}
                             </div>
                           </div>
-                          <button
-                            className={`bm ${saved ? "on" : ""}`}
-                            onClick={() => toggleBm(it.id)}
-                            aria-label="저장"
-                            aria-pressed={saved}
-                          >
-                            {saved ? "SAVED" : "SAVE"}
-                          </button>
                         </article>
                       );
                     })}

@@ -69,14 +69,25 @@ export default async function AdminPage({
     );
   }
 
-  const [totals, recent] = await Promise.all([
+  const [totals, recent, topClicks, dailyClicks] = await Promise.all([
     sql`select source, count(*)::int as cnt, max(created_at)::date::text as last
         from items group by source order by cnt desc`,
     sql`select id::int as id, title, source, category,
                to_char(published_at, 'YYYY-MM-DD') as published_at, url
         from items order by id desc limit 60`,
+    // 최근 7일 인기 클릭 콘텐츠
+    sql`select i.title, i.source, i.category, count(*)::int as clicks
+        from clicks c join items i on i.id = c.item_id
+        where c.created_at > now() - interval '7 days'
+        group by i.id, i.title, i.source, i.category
+        order by clicks desc limit 15`.catch(() => []),
+    // 최근 7일 일별 클릭 추이
+    sql`select to_char(created_at at time zone 'Asia/Seoul', 'MM-DD') as day, count(*)::int as clicks
+        from clicks where created_at > now() - interval '7 days'
+        group by day order by day desc`.catch(() => []),
   ]);
   const total = totals.reduce((s, r) => s + (r.cnt as number), 0);
+  const weekClicks = dailyClicks.reduce((s, r) => s + (r.clicks as number), 0);
 
   return (
     <main style={box}>
@@ -94,6 +105,33 @@ export default async function AdminPage({
               <td style={td}>{r.last as string}</td>
             </tr>
           ))}
+        </tbody>
+      </table>
+
+      <h2>최근 7일 클릭 {weekClicks}건</h2>
+      <p style={{ color: "#888", margin: "4px 0 12px" }}>
+        일별: {dailyClicks.length === 0
+          ? "아직 없음"
+          : dailyClicks.map((r) => `${r.day}(${r.clicks})`).join(" · ")}
+        {" — "}방문·유입경로는 Vercel 대시보드 → Analytics 탭 참고
+      </p>
+      <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: 32 }}>
+        <thead>
+          <tr><th style={th}>클릭</th><th style={th}>분류</th><th style={th}>제목</th><th style={th}>출처</th></tr>
+        </thead>
+        <tbody>
+          {topClicks.length === 0 ? (
+            <tr><td style={td} colSpan={4}>아직 클릭 기록이 없습니다</td></tr>
+          ) : (
+            topClicks.map((r, i) => (
+              <tr key={i}>
+                <td style={td}>{r.clicks as number}</td>
+                <td style={td}>{r.category as string}</td>
+                <td style={td}>{r.title as string}</td>
+                <td style={td}>{r.source as string}</td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
 

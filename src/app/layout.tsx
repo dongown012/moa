@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const plexMono = IBM_Plex_Mono({
@@ -9,10 +10,27 @@ const plexMono = IBM_Plex_Mono({
   variable: "--font-plex-mono",
 });
 
+const TITLE = "모아 — 소셜섹터 인덱스";
+const DESCRIPTION =
+  "비영리·사회적경제 뉴스, 채용, 지원사업, 행사, 교육을 매일 한 페이지로 모아 원문으로 연결합니다.";
+
 export const metadata: Metadata = {
-  title: "모아 — 소셜섹터 인덱스",
-  description:
-    "한국 소셜섹터(비영리·사회적기업) 소식을 한 페이지로. 뉴스·채용·지원사업·모임·행사·교육·자료를 매일 모아 원문으로 연결합니다.",
+  metadataBase: new URL("https://moa-social.vercel.app"),
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: "/",
+    siteName: "모아",
+    locale: "ko_KR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({
@@ -27,7 +45,10 @@ export default function RootLayout({
           href="https://cdn.jsdelivr.net/gh/sun-typeface/SUIT@2/fonts/variable/woff2/SUIT-Variable.css"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
