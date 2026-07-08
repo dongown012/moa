@@ -18,19 +18,14 @@ const modeNote = (mode: DataMode, items: Item[]) => {
   return hasFiller ? " (실시간 수집 · 일부 카테고리는 예시 데이터)" : " (실시간 수집)";
 };
 
-// 라운드로빈 유틸: 키별로 묶은 뒤 한 개씩 번갈아 뽑기
-const roundRobin = <K,>(rows: Item[], keyOf: (i: Item) => K): Item[] => {
-  const buckets = new Map<K, Item[]>();
-  for (const r of rows) {
-    if (!buckets.has(keyOf(r))) buckets.set(keyOf(r), []);
-    buckets.get(keyOf(r))!.push(r);
-  }
-  const lists = [...buckets.values()];
+// 준비된 목록들에서 한 개씩 번갈아 뽑기
+const rrLists = (lists: Item[][]): Item[] => {
+  const queues = lists.map((l) => [...l]);
   const out: Item[] = [];
   for (let picked = true; picked; ) {
     picked = false;
-    for (const l of lists) {
-      const x = l.shift();
+    for (const q of queues) {
+      const x = q.shift();
       if (x) {
         out.push(x);
         picked = true;
@@ -40,13 +35,29 @@ const roundRobin = <K,>(rows: Item[], keyOf: (i: Item) => K): Item[] => {
   return out;
 };
 
-// 같은 종류·같은 매체가 주르륵 이어지지 않도록:
-// 카테고리를 번갈아 배치하고, 각 카테고리 안에서는 출처를 번갈아 배치
-const interleave = (rows: Item[]): Item[] =>
-  roundRobin(
-    roundRobin(rows, (i) => i.source),
-    (i) => i.category
-  );
+const bucketBy = <K,>(rows: Item[], keyOf: (i: Item) => K): Item[][] => {
+  const buckets = new Map<K, Item[]>();
+  for (const r of rows) {
+    if (!buckets.has(keyOf(r))) buckets.set(keyOf(r), []);
+    buckets.get(keyOf(r))!.push(r);
+  }
+  return [...buckets.values()];
+};
+
+// 카테고리 안 정렬: 마감 있는 것(임박순) → 상시(출처 번갈아) → 마감 지난 것
+const arrangeByDeadline = (rows: Item[], today: string): Item[] => {
+  const active = rows
+    .filter((r) => r.deadline && r.deadline >= today)
+    .sort((a, b) => a.deadline!.localeCompare(b.deadline!));
+  const noDeadline = rrLists(bucketBy(rows.filter((r) => !r.deadline), (i) => i.source));
+  const expired = rows.filter((r) => r.deadline && r.deadline < today);
+  return [...active, ...noDeadline, ...expired];
+};
+
+// 같은 종류가 주르륵 이어지지 않도록 카테고리를 번갈아 배치하고,
+// 각 카테고리 안은 '마감 임박 우선' 순서를 유지 (날짜 그룹 단위로 적용)
+const interleave = (rows: Item[], today: string): Item[] =>
+  rrLists(bucketBy(rows, (i) => i.category).map((l) => arrangeByDeadline(l, today)));
 
 // 어떤 콘텐츠가 읽히는지 보기 위한 클릭 기록 (원문 이동은 막지 않음)
 const trackClick = (id: number) => {
@@ -152,8 +163,10 @@ export default function HomeClient({
       if (!map.has(i.published_at)) map.set(i.published_at, []);
       map.get(i.published_at)!.push(i);
     }
-    return [...map.entries()].map(([date, rows]) => [date, interleave(rows)] as const);
-  }, [items, activeCat, query]);
+    return [...map.entries()].map(
+      ([date, rows]) => [date, interleave(rows, today)] as const
+    );
+  }, [items, activeCat, query, today]);
 
   const todayDate = parseDate(today);
 
