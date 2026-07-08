@@ -12,6 +12,10 @@ async function deleteItem(formData: FormData) {
   const id = Number(formData.get("id"));
   const sql = getDb();
   if (!sql || !Number.isInteger(id)) return;
+  // URL을 차단 목록에 남겨 다음 수집 때 다시 들어오지 않게 함
+  await sql`insert into blocked_urls (url)
+            select url from items where id = ${id}
+            on conflict (url) do nothing`;
   await sql`delete from items where id = ${id}`;
   revalidatePath("/admin");
   revalidatePath("/");

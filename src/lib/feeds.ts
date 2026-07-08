@@ -14,7 +14,8 @@ export const FEEDS: FeedDef[] = [
   { name: "라이프인",       feedUrl: "http://www.lifein.news/rss/allArticle.xml",          siteUrl: "http://www.lifein.news",       category: "news" },
   // 이로운넷은 전체기사에 지역 일반뉴스가 많아 '사회연대경제' 섹션(S1N1)만 구독
   { name: "이로운넷",       feedUrl: "http://www.eroun.net/rss/S1N1.xml",                  siteUrl: "http://www.eroun.net",         category: "news" },
-  { name: "더나은미래",     feedUrl: "https://futurechosun.com/feed",                      siteUrl: "https://futurechosun.com",     category: "news" },
+  // 더나은미래 전체 피드엔 기업 비즈니스 기사(경제/산업/ESG 섹션)가 섞여 '공익' 카테고리만 구독
+  { name: "더나은미래",     feedUrl: "https://futurechosun.com/archives/category/public-interest/feed", siteUrl: "https://futurechosun.com", category: "news" },
   // 임팩트온 전체기사는 기업 ESG·글로벌 산업 뉴스뿐(2026-07 확인, 39건 중 소셜섹터 0건)
   // → 사회공헌 소식이 실리는 '업계소식'(S1N6)만 구독 (볼륨 낮음)
   { name: "임팩트온",       feedUrl: "http://www.impacton.net/rss/S1N6.xml",               siteUrl: "http://www.impacton.net",      category: "news" },

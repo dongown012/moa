@@ -58,12 +58,20 @@ export async function collectAndStore() {
   let upserted: number | null = null;
   if (sql && items.length > 0) {
     await ensureSchema(sql);
+    // 관리자가 삭제(차단)한 URL은 다시 저장하지 않음
+    const blocked = new Set((await sql`select url from blocked_urls`).map((r) => r.url as string));
     // id는 DB가 생성(identity)하므로 제외. url unique 충돌 시 기존 행 유지.
-    const rows = items.map(({ id: _id, ...rest }) => rest);
-    const result = await sql`
-      insert into items ${sql(rows, "title", "summary", "source", "url", "category", "extra", "published_at", "deadline")}
-      on conflict (url) do nothing`;
-    upserted = result.count;
+    const rows = items
+      .filter((i) => !blocked.has(i.url))
+      .map(({ id: _id, ...rest }) => rest);
+    if (rows.length > 0) {
+      const result = await sql`
+        insert into items ${sql(rows, "title", "summary", "source", "url", "category", "extra", "published_at", "deadline")}
+        on conflict (url) do nothing`;
+      upserted = result.count;
+    } else {
+      upserted = 0;
+    }
   }
   return { collected: items.length, upserted, stats, zeroSources };
 }

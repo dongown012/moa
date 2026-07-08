@@ -48,4 +48,10 @@ export async function ensureSchema(sql: NonNullable<ReturnType<typeof getDb>>) {
       email      text not null unique,
       created_at timestamptz not null default now()
     )`;
+  // /admin에서 삭제한 항목의 URL — 다음 수집 때 다시 들어오지 않도록 영구 차단
+  await sql`
+    create table if not exists blocked_urls (
+      url        text primary key,
+      created_at timestamptz not null default now()
+    )`;
 }
