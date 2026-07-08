@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Item, Category } from "@/lib/types";
-import { CATS, CAT_LABEL, EXCLUDE_FROM_ALL } from "@/lib/types";
+import { CATS, CAT_LABEL } from "@/lib/types";
 import type { DataMode } from "@/lib/data";
 
 const DOW = ["일", "월", "화", "수", "목", "금", "토"];
@@ -18,12 +18,12 @@ const modeNote = (mode: DataMode, items: Item[]) => {
   return hasFiller ? " (실시간 수집 · 일부 카테고리는 예시 데이터)" : " (실시간 수집)";
 };
 
-// 같은 매체가 연속으로 나오지 않도록 날짜 그룹 안에서 출처를 라운드로빈으로 배치
-const interleaveBySource = (rows: Item[]): Item[] => {
-  const buckets = new Map<string, Item[]>();
+// 라운드로빈 유틸: 키별로 묶은 뒤 한 개씩 번갈아 뽑기
+const roundRobin = <K,>(rows: Item[], keyOf: (i: Item) => K): Item[] => {
+  const buckets = new Map<K, Item[]>();
   for (const r of rows) {
-    if (!buckets.has(r.source)) buckets.set(r.source, []);
-    buckets.get(r.source)!.push(r);
+    if (!buckets.has(keyOf(r))) buckets.set(keyOf(r), []);
+    buckets.get(keyOf(r))!.push(r);
   }
   const lists = [...buckets.values()];
   const out: Item[] = [];
@@ -39,6 +39,14 @@ const interleaveBySource = (rows: Item[]): Item[] => {
   }
   return out;
 };
+
+// 같은 종류·같은 매체가 주르륵 이어지지 않도록:
+// 카테고리를 번갈아 배치하고, 각 카테고리 안에서는 출처를 번갈아 배치
+const interleave = (rows: Item[]): Item[] =>
+  roundRobin(
+    roundRobin(rows, (i) => i.source),
+    (i) => i.category
+  );
 
 // 어떤 콘텐츠가 읽히는지 보기 위한 클릭 기록 (원문 이동은 막지 않음)
 const trackClick = (id: number) => {
@@ -123,16 +131,12 @@ export default function HomeClient({
 
   // 탭별 건수
   const countOf = (cat: Category | "all") =>
-    cat === "all"
-      ? items.filter((i) => !EXCLUDE_FROM_ALL.includes(i.category)).length
-      : items.filter((i) => i.category === cat).length;
+    cat === "all" ? items.length : items.filter((i) => i.category === cat).length;
 
-  // 필터링된 목록 → 날짜별 그룹 (그룹 안에서는 출처 라운드로빈)
+  // 필터링된 목록 → 날짜별 그룹 (그룹 안에서는 카테고리·출처 라운드로빈)
   const groups = useMemo(() => {
     let list =
-      activeCat === "all"
-        ? items.filter((i) => !EXCLUDE_FROM_ALL.includes(i.category))
-        : items.filter((i) => i.category === activeCat);
+      activeCat === "all" ? items : items.filter((i) => i.category === activeCat);
     const q = query.trim().toLowerCase();
     if (q)
       list = items.filter(
@@ -148,9 +152,7 @@ export default function HomeClient({
       if (!map.has(i.published_at)) map.set(i.published_at, []);
       map.get(i.published_at)!.push(i);
     }
-    return [...map.entries()].map(
-      ([date, rows]) => [date, interleaveBySource(rows)] as const
-    );
+    return [...map.entries()].map(([date, rows]) => [date, interleave(rows)] as const);
   }, [items, activeCat, query]);
 
   const todayDate = parseDate(today);
@@ -239,11 +241,6 @@ export default function HomeClient({
             </button>
           ))}
         </nav>
-        <p className="feed-note">
-          {activeCat === "all"
-            ? "지원사업 공고는 지원사업 탭에서 따로 모아 보실 수 있습니다."
-            : " "}
-        </p>
 
         <div className="feed">
           {groups.length === 0 ? (

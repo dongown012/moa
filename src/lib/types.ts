@@ -25,6 +25,3 @@ export const CATS: { id: Category | "all"; label: string }[] = [
 export const CAT_LABEL = Object.fromEntries(
   CATS.map((c) => [c.id, c.label])
 ) as Record<Category | "all", string>;
-
-// 지원사업은 '전체' 피드에서 제외 — 전용 탭에서만 노출
-export const EXCLUDE_FROM_ALL: Category[] = ["grant"];
