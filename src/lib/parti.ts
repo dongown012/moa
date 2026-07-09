@@ -1,16 +1,18 @@
 import type { Item } from "./types";
-import { stripHtml, urlToId } from "./rss";
+import { stripHtml, truncate, urlToId } from "./rss";
 import { kstDateString } from "./dates";
 
 // 빠띠 시민대화(talks.campaigns.do) — 사회적협동조합 빠띠가 운영하는 시민 공론장.
-// RSS는 없지만 목록이 서버 렌더링이라 카드에서 직접 추출합니다.
-// 공론장은 상시성이라 마감일이 없어, 발행 60일 후 자동 숨김(hideStaleEvents)에 맡깁니다.
+// RSS는 없지만 /goals 목록이 서버 렌더링(최신순)이라 카드에서 직접 추출합니다.
+// 목록에 날짜가 없어 발행일을 알 수 없으므로 수집일로 기록하고, 최신순 상위 N개만 담습니다.
+// (DB 모드에선 최초 수집일이 고정되어, 오래된 공론장은 발행 60일 후 자동 숨김에 맡겨집니다.)
 
-const LIST_URL = "https://talks.campaigns.do/";
+const LIST_URL = "https://talks.campaigns.do/goals";
 const BASE = "https://talks.campaigns.do";
+const LIMIT = 12;
 
-// 카드: <a class="block ... border" href="/goals/slug"> 제목 … 발행일 YYYY-MM-DD </a>
-const CARD_RE = /<a class="block[^"]*border"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g;
+// 카드: <a ... href="/goals/slug"><img ...>제목</a>
+const CARD_RE = /<a[^>]*href="(\/goals\/[a-zA-Z0-9_-]+)"[^>]*>([\s\S]*?)<\/a>/g;
 
 export async function fetchPartiTalks(): Promise<Item[]> {
   try {
@@ -29,18 +31,12 @@ export async function fetchPartiTalks(): Promise<Item[]> {
     const items: Item[] = [];
 
     for (const m of html.matchAll(CARD_RE)) {
-      const url = m[1].startsWith("http") ? m[1] : `${BASE}${m[1]}`;
+      const url = `${BASE}${m[1]}`;
       if (seen.has(url)) continue;
       seen.add(url);
 
-      const date = (m[2].match(/(\d{4}-\d{2}-\d{2})/) ?? [])[1] ?? today;
-      // 제목: 태그·날짜·'발행일' 라벨·특수 공백(U+3164) 정리
-      const title = stripHtml(m[2])
-        .replace(/\d{4}-\d{2}-\d{2}/, "")
-        .replace(/발행일/g, "")
-        .replace(/ㅤ/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
+      // 썸네일 이미지 태그를 걷어내고 제목 텍스트만
+      const title = truncate(stripHtml(m[2].replace(/<img[^>]*>/g, "")), 70);
       if (title.length < 4) continue;
 
       items.push({
@@ -51,9 +47,10 @@ export async function fetchPartiTalks(): Promise<Item[]> {
         url,
         category: "event",
         extra: "시민 공론장",
-        published_at: date > today ? today : date,
+        published_at: today, // 목록에 날짜가 없어 수집일 기록
         deadline: null,
       });
+      if (items.length >= LIMIT) break;
     }
     return items;
   } catch (e) {
