@@ -23,7 +23,11 @@ export const FEEDS: FeedDef[] = [
   // 한국NGO신문 전체기사는 지자체 행정·금융 PR이 섞여 '나눔과연대' 섹션만 구독
   // ('공정사회' S1N69는 사건·정치 기사가 섞여 사용자 요청으로 제외)
   { name: "한국NGO신문",    feedUrl: "http://www.ngonews.kr/rss/S1N72.xml",                siteUrl: "http://www.ngonews.kr",        category: "news" },
-  { name: "웰페어뉴스",     feedUrl: "http://www.welfarenews.net/rss/allArticle.xml",      siteUrl: "http://www.welfarenews.net",   category: "news" },
+  // 웰페어뉴스 전체기사엔 '지역네트워크'(S1N10) 지자체 홍보(축제·관광 등)가 많아
+  // 본령인 복지 3섹션만 구독: 장애인(S1N1)·노인(S1N2)·아동여성(S1N3)
+  { name: "웰페어뉴스",     feedUrl: "http://www.welfarenews.net/rss/S1N1.xml",            siteUrl: "http://www.welfarenews.net",   category: "news", limit: 4 },
+  { name: "웰페어뉴스",     feedUrl: "http://www.welfarenews.net/rss/S1N2.xml",            siteUrl: "http://www.welfarenews.net",   category: "news", limit: 4 },
+  { name: "웰페어뉴스",     feedUrl: "http://www.welfarenews.net/rss/S1N3.xml",            siteUrl: "http://www.welfarenews.net",   category: "news", limit: 4 },
   { name: "복지타임즈",     feedUrl: "http://www.bokjitimes.com/rss/allArticle.xml",       siteUrl: "http://www.bokjitimes.com",    category: "news" },
   { name: "웰페어이슈",     feedUrl: "http://www.welfareissue.com/rss/allArticle.xml",     siteUrl: "http://www.welfareissue.com",  category: "news" },
 
