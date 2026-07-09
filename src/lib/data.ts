@@ -6,6 +6,7 @@ import { fetchBizinfoGrants } from "./grants";
 import { fetchImpactCareerJobs, fetchImpactCareerPrograms } from "./jobs";
 import { fetchOrangeLetterItems } from "./orange";
 import { fetchHiaiReports } from "./hiai";
+import { fetchPartiTalks } from "./parti";
 import { kstDayOffset } from "./dates";
 
 // 같은 보도자료를 여러 매체가 그대로 싣는 경우가 있어 제목(기호·공백 제거)으로도 중복 제거
@@ -14,13 +15,14 @@ const normTitle = (t: string) => t.replace(/[^가-힣a-zA-Z0-9]/g, "");
 // 전 소스를 한 번에 수집 — 페이지 렌더링과 /api/collect가 공유.
 // stats의 0건 소스는 피드 장애/사이트 개편 신호입니다.
 export async function collectLiveItems(): Promise<{ items: Item[]; stats: CollectStats }> {
-  const [rss, grants, jobs, programs, orange, hiai] = await Promise.all([
+  const [rss, grants, jobs, programs, orange, hiai, parti] = await Promise.all([
     fetchRssItems(),
     fetchBizinfoGrants(),
     fetchImpactCareerJobs(),
     fetchImpactCareerPrograms(),
     fetchOrangeLetterItems(),
     fetchHiaiReports(),
+    fetchPartiTalks(),
   ]);
   const stats: CollectStats = {
     ...rss.stats,
@@ -29,6 +31,7 @@ export async function collectLiveItems(): Promise<{ items: Item[]; stats: Collec
     "임팩트닷커리어/edu": programs.length,
     "오렌지레터/전섹션": orange.length,
     "홍익지능/lib": hiai.length,
+    "빠띠시민대화/event": parti.length,
   };
   for (const [src, n] of Object.entries(stats)) {
     if (n === 0) console.warn(`[수집 경고] ${src}: 0건 — 피드 장애 또는 사이트 개편 가능성`);
@@ -36,7 +39,7 @@ export async function collectLiveItems(): Promise<{ items: Item[]; stats: Collec
 
   const seenUrl = new Set<string>();
   const seenTitle = new Set<string>();
-  const items = [...rss.items, ...grants, ...jobs, ...programs, ...orange, ...hiai].filter((i) => {
+  const items = [...rss.items, ...grants, ...jobs, ...programs, ...orange, ...hiai, ...parti].filter((i) => {
     const t = normTitle(i.title);
     if (seenUrl.has(i.url) || (t && seenTitle.has(t))) return false;
     seenUrl.add(i.url);
