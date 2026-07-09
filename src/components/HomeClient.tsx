@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Item, Category } from "@/lib/types";
 import { CATS, CAT_LABEL } from "@/lib/types";
 import type { DataMode } from "@/lib/data";
 
 const DOW = ["일", "월", "화", "수", "목", "금", "토"];
+const BATCH = 40; // 한 번에 화면에 그리는 항목 수 (데이터는 전체 보유, 렌더만 점진적)
 const pad = (n: number) => String(n).padStart(2, "0");
 // "YYYY-MM-DD"를 로컬 자정 기준 Date로 (타임존 밀림 방지)
 const parseDate = (s: string) => new Date(`${s}T00:00:00`);
@@ -82,6 +83,8 @@ export default function HomeClient({
   const [query, setQuery] = useState("");
   const [nlMsg, setNlMsg] = useState("");
   const [nlBusy, setNlBusy] = useState(false);
+  const [visible, setVisible] = useState(BATCH); // 현재 화면에 그리는 항목 수
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   // 카테고리 딥링크: ?cat=job 으로 진입하면 해당 탭을 열고, 탭 전환 시 URL도 갱신
   useEffect(() => {
@@ -167,6 +170,37 @@ export default function HomeClient({
       ([date, rows]) => [date, interleave(rows, today)] as const
     );
   }, [items, activeCat, query, today]);
+
+  // 탭 전환·검색 시 처음부터 다시 (점진 렌더 리셋)
+  useEffect(() => setVisible(BATCH), [activeCat, query]);
+
+  // 전체 데이터는 그대로 두고 화면에는 visible개까지만 그림 — 검색·필터는 전체 대상 유지
+  const { visibleGroups, total } = useMemo(() => {
+    const total = groups.reduce((s, [, rows]) => s + rows.length, 0);
+    const out: (readonly [string, Item[]])[] = [];
+    let remaining = visible;
+    for (const [date, rows] of groups) {
+      if (remaining <= 0) break;
+      const take = rows.slice(0, remaining);
+      out.push([date, take]);
+      remaining -= take.length;
+    }
+    return { visibleGroups: out, total };
+  }, [groups, visible]);
+  const hasMore = visible < total;
+
+  // 스크롤이 끝에 닿으면 다음 배치를 이어 그림 (추가 서버 요청 없음)
+  useEffect(() => {
+    if (!hasMore) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => entries[0].isIntersecting && setVisible((v) => v + BATCH),
+      { rootMargin: "600px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasMore, visibleGroups]);
 
   const todayDate = parseDate(today);
 
@@ -262,7 +296,7 @@ export default function HomeClient({
               <span className="mono">NO RESULTS — 다른 키워드로 검색해 보세요</span>
             </div>
           ) : (
-            groups.map(([date, rows]) => {
+            visibleGroups.map(([date, rows]) => {
               const dt = parseDate(date);
               const isToday = date === today;
               return (
@@ -306,6 +340,11 @@ export default function HomeClient({
                 </div>
               );
             })
+          )}
+          {hasMore && (
+            <div ref={sentinelRef} className="load-more" aria-hidden>
+              더 불러오는 중…
+            </div>
           )}
         </div>
       </main>
