@@ -11,8 +11,9 @@ const LIST_URL = "https://talks.campaigns.do/goals";
 const BASE = "https://talks.campaigns.do";
 const LIMIT = 12;
 
-// 카드: <a ... href="/goals/slug"><img ...>제목</a>
+// 카드: <a href="/goals/slug"> <img> <h5 gray-900>대표 질문</h5> <h5 gray-500>공론장 이름</h5> </a>
 const CARD_RE = /<a[^>]*href="(\/goals\/[a-zA-Z0-9_-]+)"[^>]*>([\s\S]*?)<\/a>/g;
+const clean = (s: string) => stripHtml(s).replace(/ㅤ/g, " ").replace(/\s+/g, " ").trim();
 
 export async function fetchPartiTalks(): Promise<Item[]> {
   try {
@@ -35,14 +36,16 @@ export async function fetchPartiTalks(): Promise<Item[]> {
       if (seen.has(url)) continue;
       seen.add(url);
 
-      // 썸네일 이미지 태그를 걷어내고 제목 텍스트만
-      const title = truncate(stripHtml(m[2].replace(/<img[^>]*>/g, "")), 70);
+      // 첫 h5(gray-900)=대표 질문, 둘째 h5(gray-500)=공론장 이름
+      const q = clean((m[2].match(/<h5[^>]*text-gray-900[^>]*>([\s\S]*?)<\/h5>/) ?? [])[1] ?? "");
+      const sub = clean((m[2].match(/<h5[^>]*text-gray-500[^>]*>([\s\S]*?)<\/h5>/) ?? [])[1] ?? "");
+      const title = q || sub;
       if (title.length < 4) continue;
 
       items.push({
         id: urlToId(url),
-        title,
-        summary: null,
+        title: truncate(title, 70),
+        summary: q && sub ? truncate(sub, 80) : null, // 질문이 제목이면 공론장 이름을 요약으로
         source: "빠띠 시민대화",
         url,
         category: "event",

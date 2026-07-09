@@ -43,6 +43,8 @@ export function cleanSummary(raw: string, max = 150): string {
     )
     .replace(/^\[[가-힣A-Za-z0-9·=\s]{2,20}\]\s*/, "")
     .replace(/^[|·\-—=\s]+/, "") // 피드 찌꺼기 (선두 구분 기호)
+    // 워드프레스 피드가 본문 끝에 붙이는 "The post ... appeared first on ..." 자동 문구 제거
+    .replace(/\s*The post\b[\s\S]*?appeared first on[\s\S]*$/i, "")
     // 피드가 문장 사이 공백을 지우는 경우 복원: "밝혔다.신협" → "밝혔다. 신협" (소수점은 안 건드림)
     .replace(/(다|요|음|함|임)\.(?=[가-힣("'‘“])/g, "$1. ")
     .trim();
