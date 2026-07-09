@@ -243,12 +243,6 @@ export default function HomeClient({
             <span>
               이번 주 마감 <b>{stats.weekDl}</b>
             </span>
-            <span>
-              수집 출처 <b>{stats.srcs}</b>
-            </span>
-            <span>
-              전체 <b>{stats.total}</b>건
-            </span>
           </div>
         </div>
       </section>
@@ -310,7 +304,9 @@ export default function HomeClient({
                       const d = it.deadline ? dday(it.deadline) : null;
                       return (
                         <article className="row" key={it.id}>
-                          <span className="row-cat">{CAT_LABEL[it.category]}</span>
+                          <span className="row-cat" data-cat={it.category}>
+                            {CAT_LABEL[it.category]}
+                          </span>
                           <div>
                             <h3>
                               <a

@@ -22,7 +22,9 @@ export function stripHtml(html: string): string {
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
-    .replace(/&#0?39;/g, "'")
+    // 숫자 문자 참조(&#38; &#x26; 등) 전반 디코드 — 일부 피드가 &를 &#038;로 이중 인코딩해 보냄
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d)))
     .replace(/\s+/g, " ")
     .trim();
 }

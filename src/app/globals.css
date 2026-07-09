@@ -65,12 +65,20 @@ h1 .accent{color:var(--cobalt)}
 /* ── 피드 ── */
 .feed{padding-bottom:40px}
 .date-group{display:grid;grid-template-columns:120px 1fr;border-bottom:1px solid var(--rule)}
-.date-head{font-family:var(--mono);font-size:12.5px;font-weight:600;letter-spacing:.05em;color:var(--ink);padding:30px 0}
-.date-head small{display:block;font-weight:400;color:var(--ink-30);margin-top:2px;font-size:11px}
+.date-head{font-family:var(--sans);font-size:16px;font-weight:800;letter-spacing:-0.01em;color:var(--ink);padding:30px 0}
+.date-head small{display:inline-block;margin-left:8px;font-family:var(--mono);font-weight:600;color:var(--cobalt);font-size:10.5px;letter-spacing:.08em;vertical-align:2px}
 .rows{border-left:1px solid var(--rule)}
 .row{display:grid;grid-template-columns:92px 1fr;gap:20px;padding:26px 0 26px 28px;border-bottom:1px solid var(--rule);align-items:baseline;transition:background .12s}
 .row:last-child{border-bottom:none}
-.row-cat{font-family:var(--mono);font-size:11.5px;font-weight:500;letter-spacing:.06em;color:var(--ink-60)}
+/* 카테고리 색 라벨 — 썸네일 없이 시각적 리듬을 주는 색 앵커 (색 점 + 색 텍스트) */
+.row-cat{font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:0;color:var(--ink-60);display:flex;align-items:center;gap:6px}
+.row-cat::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.row-cat[data-cat="news"]{color:#141414}
+.row-cat[data-cat="job"]{color:#1D40C8}
+.row-cat[data-cat="grant"]{color:#0F7B3E}
+.row-cat[data-cat="event"]{color:#7C3AED}
+.row-cat[data-cat="edu"]{color:#B45309}
+.row-cat[data-cat="lib"]{color:#0E7490}
 .row h3{font-size:19px;font-weight:800;letter-spacing:-0.025em;line-height:1.4;margin-bottom:6px}
 /* 밑줄 애니메이션은 마우스 기기에서만 — 터치에서는 탭 후 밑줄이 눌러붙어 어색함 */
 @media (hover:hover){
@@ -79,9 +87,10 @@ h1 .accent{color:var(--cobalt)}
   .row:hover h3 a{background-size:100% 2px}
 }
 .row p{font-size:14px;color:var(--ink-60);max-width:620px}
-.row-meta{font-family:var(--mono);font-size:12px;color:var(--ink-60);margin-top:10px;display:flex;gap:16px;flex-wrap:wrap}
-.row-meta .src{color:var(--ink);font-weight:500}
-.dday{font-weight:600;color:var(--cobalt)}
+.row-meta{font-family:var(--sans);font-size:12.5px;color:var(--ink-60);margin-top:10px;display:flex;gap:16px;flex-wrap:wrap}
+.row-meta .src{color:var(--ink);font-weight:600}
+/* 마감은 정보로 유지하되 색은 절제 — 임박(D-5 이하)만 빨강 */
+.dday{font-weight:600;color:var(--ink-60)}
 .dday.urgent{color:var(--red)}
 .bm{align-self:start;font-family:var(--mono);font-size:11px;letter-spacing:.05em;color:var(--ink-30);padding:4px 10px;border:1px solid transparent;transition:color .12s,border-color .12s}
 .bm:hover{color:var(--ink);border-color:var(--rule)}
@@ -134,7 +143,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
   .rows{border-left:none}
   /* 모바일 가독성: 한 열로 쌓고, 본문 크기·행간·간격을 읽기 편하게 */
   .row{grid-template-columns:1fr;gap:0;padding:24px 0}
-  .row-cat{margin-bottom:10px;display:block}
+  .row-cat{margin-bottom:10px}
   .row h3{font-size:18px;line-height:1.45;letter-spacing:-0.02em;margin-bottom:8px;word-break:keep-all}
   .row p{font-size:14.5px;line-height:1.65;word-break:keep-all}
   .row-meta{margin-top:12px;gap:12px;row-gap:6px}
