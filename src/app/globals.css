@@ -102,14 +102,15 @@ h1 .accent{color:var(--cobalt)}
 /* ── 뉴스레터 밴드 ── */
 .nl{background:var(--ink);color:var(--paper);padding:52px 0}
 .nl .wrap{display:grid;grid-template-columns:1fr auto;gap:40px;align-items:center}
-.nl h2{font-size:26px;font-weight:800;letter-spacing:-0.03em;line-height:1.35}
+.nl h2{font-size:clamp(21px,5vw,26px);font-weight:800;letter-spacing:-0.03em;line-height:1.35;word-break:keep-all}
 .nl h2 i{font-style:normal;color:var(--cobalt);filter:brightness(1.9)}
 .nl p{font-family:var(--mono);font-size:12.5px;color:#9C9C96;margin-top:8px}
-.nl-form{display:flex;gap:0}
-.nl-form input{border:1px solid #4A4A46;background:transparent;color:var(--paper);padding:13px 18px;font-size:14px;font-family:var(--sans);width:260px}
+.nl-form{display:flex;gap:0;max-width:100%}
+/* min-width:0 — flex 항목은 기본적으로 콘텐츠보다 안 줄어들어, 없으면 폼이 넘치고 버튼이 쪼개짐 */
+.nl-form input{min-width:0;border:1px solid #4A4A46;background:transparent;color:var(--paper);padding:13px 18px;font-size:14px;font-family:var(--sans);width:260px}
 .nl-form input::placeholder{color:#6E6E68}
 .nl-form input:focus{outline:none;border-color:var(--paper)}
-.nl-form button{background:var(--paper);color:var(--ink);font-weight:700;font-size:14px;padding:13px 24px;transition:background .12s}
+.nl-form button{flex:none;white-space:nowrap;background:var(--paper);color:var(--ink);font-weight:700;font-size:14px;padding:13px 24px;transition:background .12s}
 .nl-form button:hover{background:#E8E8E3}
 
 /* ── 뉴스레터 구독 모달 (헤더 버튼) ── */
