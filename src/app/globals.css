@@ -112,6 +112,23 @@ h1 .accent{color:var(--cobalt)}
 .nl-form button{background:var(--paper);color:var(--ink);font-weight:700;font-size:14px;padding:13px 24px;transition:background .12s}
 .nl-form button:hover{background:#E8E8E3}
 
+/* ── 뉴스레터 구독 모달 (헤더 버튼) ── */
+.nl-modal-overlay{position:fixed;inset:0;background:rgba(20,20,20,.55);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;animation:nlFade .15s ease}
+@keyframes nlFade{from{opacity:0}to{opacity:1}}
+.nl-modal{position:relative;background:var(--paper);width:100%;max-width:420px;padding:38px 32px 30px;border-top:3px solid var(--cobalt)}
+.nl-modal h2{font-size:23px;font-weight:800;letter-spacing:-0.03em;line-height:1.3;color:var(--ink)}
+.nl-modal h2 i{font-style:normal;color:var(--cobalt)}
+.nl-modal>p{font-size:13.5px;color:var(--ink-60);margin:12px 0 22px;line-height:1.65;word-break:keep-all}
+.nl-modal .nl-form input{flex:1;width:auto;border:1px solid var(--ink-30);background:var(--paper);color:var(--ink)}
+.nl-modal .nl-form input::placeholder{color:var(--ink-30)}
+.nl-modal .nl-form input:focus{border-color:var(--ink)}
+.nl-modal .nl-form button{background:var(--cobalt);color:var(--paper)}
+.nl-modal .nl-form button:hover{background:#1836A8}
+.nl-modal .nl-form button:disabled{opacity:.6}
+.nl-modal-close{position:absolute;top:10px;right:12px;font-size:26px;line-height:1;color:var(--ink-30);width:34px;height:34px;transition:color .12s}
+.nl-modal-close:hover{color:var(--ink)}
+.nl-modal-msg{margin-top:16px;font-size:13px;font-weight:500;color:var(--cobalt)}
+
 /* 한글 안내문은 본문 폰트로(모노는 한글 글리프가 없어 폰트가 갈라짐), 영문 데이터 라인만 모노 */
 footer{padding:28px 0;font-family:var(--sans);font-size:12px;color:var(--ink-30);letter-spacing:.01em;line-height:1.7;word-break:keep-all}
 footer .mono{font-size:11.5px;letter-spacing:.02em}

@@ -202,20 +202,24 @@ export default function HomeClient({
     return () => io.disconnect();
   }, [hasMore, visibleGroups]);
 
-  // 구독 밴드로 이동: 앵커 점프만 하면 착지 직후 점진 렌더가 위에 삽입되며 섹션이 밀려나므로
-  // (iOS Safari는 스크롤 앵커링 미지원), 전체를 먼저 렌더한 뒤 이동해 위치를 고정합니다.
-  const [pendingNl, setPendingNl] = useState(false);
-  const goNewsletter = (e: React.MouseEvent) => {
+  // 구독은 모달로 — 긴 피드를 지나 하단 밴드로 스크롤할 필요 없이 그 자리에서 신청.
+  // (앵커 점프는 점진 렌더가 위에 삽입되며 위치가 밀리는 문제도 있었음)
+  const [nlOpen, setNlOpen] = useState(false);
+  const openNewsletter = (e: React.MouseEvent) => {
     e.preventDefault();
-    setVisible(Number.MAX_SAFE_INTEGER);
-    setPendingNl(true);
+    setNlMsg("");
+    setNlOpen(true);
   };
   useEffect(() => {
-    if (!pendingNl || hasMore) return;
-    // 먼 거리라 즉시 이동 (smooth는 수만 px에서 어지럽고 일부 환경에서 무시됨)
-    document.getElementById("nl")?.scrollIntoView();
-    setPendingNl(false);
-  }, [pendingNl, hasMore]);
+    if (!nlOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setNlOpen(false);
+    window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden"; // 배경 스크롤 잠금
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [nlOpen]);
 
   const todayDate = parseDate(today);
 
@@ -235,7 +239,7 @@ export default function HomeClient({
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
-          <a href="#nl" className="sub-link" onClick={goNewsletter}>
+          <a href="#nl" className="sub-link" onClick={openNewsletter}>
             WEEKLY 구독
           </a>
         </div>
@@ -400,6 +404,49 @@ export default function HomeClient({
           </span>
         </div>
       </footer>
+
+      {nlOpen && (
+        <div
+          className="nl-modal-overlay"
+          onClick={() => setNlOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="뉴스레터 구독"
+        >
+          <div className="nl-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="nl-modal-close"
+              onClick={() => setNlOpen(false)}
+              aria-label="닫기"
+            >
+              ×
+            </button>
+            <h2>
+              월요일 아침 한 통<i>.</i>
+            </h2>
+            <p>이번 주 마감할 지원사업·채용·행사를 요약해 매주 월요일 07:00에 보내드립니다.</p>
+            <form className="nl-form" onSubmit={subscribe}>
+              <input
+                type="email"
+                name="email"
+                required
+                placeholder="이메일 주소"
+                aria-label="이메일 주소"
+                autoFocus
+              />
+              <button type="submit" disabled={nlBusy}>
+                {nlBusy ? "..." : "구독"}
+              </button>
+            </form>
+            {nlMsg && (
+              <p className="nl-modal-msg" role="status">
+                {nlMsg}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }
