@@ -39,7 +39,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 h1{font-size:clamp(38px,6vw,64px);font-weight:900;letter-spacing:-0.045em;line-height:1.08}
 h1 .accent{color:var(--cobalt)}
 .stats{margin-top:22px;font-family:var(--mono);font-size:13px;color:var(--ink-60);display:flex;gap:0;flex-wrap:wrap}
-.stats b{color:var(--ink);font-weight:600}
+.stats b{color:var(--cobalt);font-weight:600}
 .stats span{padding:0 18px;border-left:1px solid var(--rule)}
 .stats span:first-child{padding-left:0;border-left:none}
 
@@ -53,7 +53,12 @@ h1 .accent{color:var(--cobalt)}
 .strip a.urgent b{color:var(--red)}
 
 /* ── 탭 ── */
-.tabs{display:flex;gap:0;border-bottom:1px solid var(--rule);overflow-x:auto;overflow-y:hidden}
+/* 가로 스크롤이 가능함을 알리는 우측 페이드 — 끝까지 스크롤하면 사라짐 */
+.tabs-wrap{position:relative}
+.tabs-wrap::after{content:'';position:absolute;top:0;right:0;bottom:1px;width:56px;pointer-events:none;background:linear-gradient(to left,var(--paper) 15%,rgba(255,255,255,0));transition:opacity .15s}
+.tabs-wrap.at-end::after{opacity:0}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--rule);overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
 .tab{font-size:15px;font-weight:600;color:var(--ink-60);padding:18px 0;margin-right:32px;position:relative;white-space:nowrap;letter-spacing:-0.01em}
 .tab:hover{color:var(--ink)}
 .tab.active{color:var(--ink)}
@@ -168,9 +173,11 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
   .row p{font-size:14.5px;line-height:1.65;word-break:keep-all}
   .row-meta{margin-top:12px;gap:12px;row-gap:6px}
   h1{word-break:keep-all}
-  /* 통계: 줄바꿈 시 구분선이 어긋나므로 모바일은 2×2 그리드로 */
-  .stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px;font-size:12.5px}
-  .stats span{padding:0;border-left:none}
+  /* 상단 여백: 데스크톱의 신문 여백이 모바일에선 휑해 보여 축소 */
+  .masthead{padding:32px 0 28px}
+  .stats{margin-top:18px;font-size:12.5px}
+  .stats span{padding:0 14px}
+  .stats span:first-child{padding-left:0}
   .strip-inner{padding:0 22px}
   .nl .wrap{grid-template-columns:1fr}
   .nl-form input{flex:1;width:auto}

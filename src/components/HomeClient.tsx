@@ -97,6 +97,20 @@ export default function HomeClient({
     window.history.replaceState(null, "", url);
   };
 
+  // 탭이 가로 스크롤 가능함을 알리는 우측 페이드 — 끝에 닿으면 숨김
+  const tabsRef = useRef<HTMLElement | null>(null);
+  const [tabsAtEnd, setTabsAtEnd] = useState(false);
+  const updateTabsFade = () => {
+    const el = tabsRef.current;
+    if (!el) return;
+    setTabsAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 8);
+  };
+  useEffect(() => {
+    updateTabsFade();
+    window.addEventListener("resize", updateTabsFade);
+    return () => window.removeEventListener("resize", updateTabsFade);
+  }, []);
+
   const subscribe = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
@@ -289,18 +303,20 @@ export default function HomeClient({
       </div>
 
       <main className="wrap">
-        <nav className="tabs" aria-label="카테고리">
-          {CATS.map((c) => (
-            <button
-              key={c.id}
-              className={`tab${c.id === activeCat ? " active" : ""}`}
-              onClick={() => switchCat(c.id)}
-            >
-              {c.label}
-              <span className="cnt">{countOf(c.id)}</span>
-            </button>
-          ))}
-        </nav>
+        <div className={`tabs-wrap${tabsAtEnd ? " at-end" : ""}`}>
+          <nav className="tabs" aria-label="카테고리" ref={tabsRef} onScroll={updateTabsFade}>
+            {CATS.map((c) => (
+              <button
+                key={c.id}
+                className={`tab${c.id === activeCat ? " active" : ""}`}
+                onClick={() => switchCat(c.id)}
+              >
+                {c.label}
+                <span className="cnt">{countOf(c.id)}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
 
         <div className="feed">
           {groups.length === 0 ? (
