@@ -112,7 +112,9 @@ h1 .accent{color:var(--cobalt)}
 .nl-form button{background:var(--paper);color:var(--ink);font-weight:700;font-size:14px;padding:13px 24px;transition:background .12s}
 .nl-form button:hover{background:#E8E8E3}
 
-footer{padding:28px 0;font-family:var(--mono);font-size:11.5px;color:var(--ink-30);letter-spacing:.02em}
+/* 한글 안내문은 본문 폰트로(모노는 한글 글리프가 없어 폰트가 갈라짐), 영문 데이터 라인만 모노 */
+footer{padding:28px 0;font-family:var(--sans);font-size:12px;color:var(--ink-30);letter-spacing:.01em;line-height:1.7;word-break:keep-all}
+footer .mono{font-size:11.5px;letter-spacing:.02em}
 footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
 
 /* ── 소개 페이지 ── */
@@ -154,6 +156,8 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
   .strip-inner{padding:0 22px}
   .nl .wrap{grid-template-columns:1fr}
   .nl-form input{flex:1;width:auto}
+  /* 푸터: 좁은 화면에선 두 줄을 세로로 쌓아 어색한 줄바꿈 방지 */
+  footer .wrap{flex-direction:column;gap:8px}
   .about-body p{font-size:16px}
   .about-lead,.about-sign{font-size:17px!important}
 }

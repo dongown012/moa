@@ -202,6 +202,21 @@ export default function HomeClient({
     return () => io.disconnect();
   }, [hasMore, visibleGroups]);
 
+  // 구독 밴드로 이동: 앵커 점프만 하면 착지 직후 점진 렌더가 위에 삽입되며 섹션이 밀려나므로
+  // (iOS Safari는 스크롤 앵커링 미지원), 전체를 먼저 렌더한 뒤 이동해 위치를 고정합니다.
+  const [pendingNl, setPendingNl] = useState(false);
+  const goNewsletter = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setVisible(Number.MAX_SAFE_INTEGER);
+    setPendingNl(true);
+  };
+  useEffect(() => {
+    if (!pendingNl || hasMore) return;
+    // 먼 거리라 즉시 이동 (smooth는 수만 px에서 어지럽고 일부 환경에서 무시됨)
+    document.getElementById("nl")?.scrollIntoView();
+    setPendingNl(false);
+  }, [pendingNl, hasMore]);
+
   const todayDate = parseDate(today);
 
   return (
@@ -220,7 +235,7 @@ export default function HomeClient({
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
-          <a href="#nl" className="sub-link">
+          <a href="#nl" className="sub-link" onClick={goNewsletter}>
             WEEKLY 구독
           </a>
         </div>
@@ -380,7 +395,7 @@ export default function HomeClient({
             모아{modeNote(mode, items)} — 제목·요약과 함께 원문으로 연결합니다.
             콘텐츠 저작권은 각 출처에 있습니다.
           </span>
-          <span>
+          <span className="mono">
             SOURCES {stats.srcs} · UPDATED DAILY
           </span>
         </div>
