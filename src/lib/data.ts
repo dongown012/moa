@@ -93,17 +93,33 @@ function hideStaleEvents(items: Item[]): Item[] {
 //   mock — RSS까지 전부 실패하면 목업 전체
 export type DataMode = "db" | "live" | "mock";
 
-export async function getItems(): Promise<{ items: Item[]; mode: DataMode }> {
+export async function getItems(): Promise<{
+  items: Item[];
+  mode: DataMode;
+  headlineId?: number;
+}> {
   const sql = getDb();
   if (sql) {
     try {
-      const rows = await sql`
-        select id::int as id, title, summary, source, url, category, extra,
-               to_char(published_at, 'YYYY-MM-DD') as published_at,
-               to_char(deadline, 'YYYY-MM-DD') as deadline
-        from items
-        order by published_at desc, id desc
-        limit 300`;
+      const [rows, top] = await Promise.all([
+        sql`
+          select id::int as id, title, summary, source, url, category, extra,
+                 to_char(published_at, 'YYYY-MM-DD') as published_at,
+                 to_char(deadline, 'YYYY-MM-DD') as deadline
+          from items
+          order by published_at desc, id desc
+          limit 300`,
+        // 오늘의 헤드라인: 최근 이틀 뉴스 중 24시간 클릭 1위 (독자가 고른 기사)
+        sql`
+          select i.id::int as id
+          from clicks c join items i on i.id = c.item_id
+          where c.created_at > now() - interval '24 hours'
+            and i.category = 'news'
+            and i.published_at > current_date - 2
+          group by i.id
+          order by count(*) desc, i.id desc
+          limit 1`.catch(() => []),
+      ]);
       // 첫 수집 전(빈 테이블)에는 live로 폴백
       if (rows.length > 0) {
         // 요약 정리 개선 전에 저장된 행에도 바이라인 제거가 적용되도록 조회 시 한 번 더
@@ -111,7 +127,11 @@ export async function getItems(): Promise<{ items: Item[]; mode: DataMode }> {
           ...i,
           summary: i.summary ? cleanSummary(i.summary) : null,
         }));
-        return { items: hideStaleEvents(items), mode: "db" };
+        return {
+          items: hideStaleEvents(items),
+          mode: "db",
+          headlineId: (top[0]?.id as number) ?? undefined,
+        };
       }
     } catch (e) {
       console.error("DB 조회 실패, RSS/목업으로 대체:", e instanceof Error ? e.message : e);

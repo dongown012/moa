@@ -74,10 +74,12 @@ export default function HomeClient({
   items,
   today,
   mode,
+  headlineId,
 }: {
   items: Item[];
   today: string;
   mode: DataMode;
+  headlineId?: number;
 }) {
   const [activeCat, setActiveCat] = useState<Category | "all">("all");
   const [query, setQuery] = useState("");
@@ -161,6 +163,19 @@ export default function HomeClient({
   const countOf = (cat: Category | "all") =>
     cat === "all" ? items.length : items.filter((i) => i.category === cat).length;
 
+  // 오늘의 헤드라인 — 신문 1면의 톱기사처럼 뉴스 1건을 크게.
+  // 1순위: 최근 24시간 독자 클릭 1위(서버가 계산해 내려줌) / 폴백: 오늘자 최신 뉴스
+  const headline = useMemo(() => {
+    if (query.trim()) return null; // 검색 중에는 숨김
+    const picked = headlineId ? items.find((i) => i.id === headlineId) : undefined;
+    if (picked) return picked;
+    const todayNews = items.filter(
+      (i) => i.published_at === today && i.category === "news" && i.summary
+    );
+    return todayNews[0] ?? null;
+  }, [items, today, query, headlineId]);
+  const showHeadline = headline && activeCat === "all";
+
   // 필터링된 목록 → 날짜별 그룹 (그룹 안에서는 카테고리·출처 라운드로빈)
   const groups = useMemo(() => {
     let list =
@@ -172,6 +187,8 @@ export default function HomeClient({
           `${i.title}${i.summary ?? ""}${i.source}`.toLowerCase().includes(q) &&
           (activeCat === "all" || i.category === activeCat)
       );
+    // 헤드라인으로 올린 항목은 목록에서 제외 (중복 방지)
+    if (showHeadline) list = list.filter((i) => i.id !== headline.id);
     list = [...list].sort(
       (a, b) => parseDate(b.published_at).getTime() - parseDate(a.published_at).getTime()
     );
@@ -183,7 +200,8 @@ export default function HomeClient({
     return [...map.entries()].map(
       ([date, rows]) => [date, interleave(rows, today)] as const
     );
-  }, [items, activeCat, query, today]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, activeCat, query, today, showHeadline, headline?.id]);
 
   // 탭 전환·검색 시 처음부터 다시 (점진 렌더 리셋)
   useEffect(() => setVisible(BATCH), [activeCat, query]);
@@ -317,6 +335,26 @@ export default function HomeClient({
             ))}
           </nav>
         </div>
+
+        {showHeadline && (
+          <article className="headline">
+            <p className="headline-kicker">오늘의 헤드라인</p>
+            <h2>
+              <a
+                href={headline.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => trackClick(headline.id)}
+              >
+                {headline.title}
+              </a>
+            </h2>
+            {headline.summary && <p className="headline-summary">{headline.summary}</p>}
+            <div className="row-meta">
+              <span className="src">{headline.source}</span>
+            </div>
+          </article>
+        )}
 
         <div className="feed">
           {groups.length === 0 ? (

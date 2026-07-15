@@ -9,7 +9,7 @@ import HomeClient from "@/components/HomeClient";
 export const revalidate = 3600;
 
 export default async function Home() {
-  const { items, mode } = await getItems();
+  const { items, mode, headlineId } = await getItems();
   if (mode === "db") {
     after(async () => {
       try {
@@ -21,5 +21,5 @@ export default async function Home() {
     });
   }
   const today = kstDateString();
-  return <HomeClient items={items} today={today} mode={mode} />;
+  return <HomeClient items={items} today={today} mode={mode} headlineId={headlineId} />;
 }
