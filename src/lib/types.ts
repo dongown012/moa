@@ -25,3 +25,13 @@ export const CATS: { id: Category | "all"; label: string }[] = [
 export const CAT_LABEL = Object.fromEntries(
   CATS.map((c) => [c.id, c.label])
 ) as Record<Category | "all", string>;
+
+// 카테고리별 검색 노출용 URL 경로 (/jobs, /grants …) — SEO를 위해 실제 경로로 제공
+export const CAT_SLUG: Record<Category, string> = {
+  news: "news",
+  job: "jobs",
+  grant: "grants",
+  event: "events",
+  edu: "education",
+  lib: "library",
+};

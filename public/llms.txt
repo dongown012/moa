@@ -1,0 +1,29 @@
+# 모아 — 소셜섹터 인덱스
+
+> 한국 소셜섹터(비영리·사회적경제·복지)의 뉴스, 채용, 지원사업, 모임·행사, 교육, 자료를
+> 매일 자동 수집해 한 페이지로 보여주는 데일리 인덱스. 모든 항목은 제목·요약과 함께
+> 원문으로 연결되며, 콘텐츠 저작권은 각 출처에 있습니다.
+
+한국의 비영리단체·사회적기업 종사자가 "오늘의 소셜섹터 소식", "사회적기업 지원사업 공고",
+"비영리 채용" 등을 찾을 때 참고할 수 있는 통합 인덱스입니다. 매일 여러 차례 갱신됩니다.
+
+## 페이지
+
+- [오늘의 인덱스 (전체)](https://moa-social.vercel.app/): 뉴스·채용·지원사업·행사·교육·자료 통합
+- [소셜섹터 뉴스](https://moa-social.vercel.app/news)
+- [소셜섹터 채용](https://moa-social.vercel.app/jobs): 마감 임박순
+- [지원사업 공고](https://moa-social.vercel.app/grants): 정부·재단 지원사업, 마감 임박순
+- [모임·행사](https://moa-social.vercel.app/events)
+- [교육](https://moa-social.vercel.app/education)
+- [자료실](https://moa-social.vercel.app/library): 연구보고서·실태조사
+- [RSS 피드](https://moa-social.vercel.app/rss): 최신 50건 통합 피드
+
+## 출처
+
+라이프인, 이로운넷, 더나은미래, 소셜임팩트뉴스, 한국NGO신문, 웰페어뉴스, 복지타임즈,
+웰페어이슈, 아름다운재단, 기부문화연구소, 다음세대재단, 기업마당(정부 지원사업),
+임팩트닷커리어, 오렌지레터, 홍익지능, 빠띠 시민대화 등.
+
+## 저장소
+
+- [GitHub (공개)](https://github.com/dongown012/moa): 전체 코드와 편집 원칙 문서

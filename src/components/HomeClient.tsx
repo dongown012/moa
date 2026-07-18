@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Item, Category } from "@/lib/types";
-import { CATS, CAT_LABEL } from "@/lib/types";
+import { CATS, CAT_LABEL, CAT_SLUG } from "@/lib/types";
 import type { DataMode } from "@/lib/data";
 
 const DOW = ["일", "월", "화", "수", "목", "금", "토"];
@@ -75,13 +75,15 @@ export default function HomeClient({
   today,
   mode,
   headlineId,
+  initialCat,
 }: {
   items: Item[];
   today: string;
   mode: DataMode;
   headlineId?: number;
+  initialCat?: Category;
 }) {
-  const [activeCat, setActiveCat] = useState<Category | "all">("all");
+  const [activeCat, setActiveCat] = useState<Category | "all">(initialCat ?? "all");
   const [query, setQuery] = useState("");
   const [nlMsg, setNlMsg] = useState("");
   const [nlBusy, setNlBusy] = useState(false);
@@ -95,8 +97,8 @@ export default function HomeClient({
   }, []);
   const switchCat = (cat: Category | "all") => {
     setActiveCat(cat);
-    const url = cat === "all" ? window.location.pathname : `?cat=${cat}`;
-    window.history.replaceState(null, "", url);
+    // 카테고리별 실제 경로(/jobs 등)로 URL 갱신 — 공유하면 그 탭이 열린 채로 색인·접속됨
+    window.history.replaceState(null, "", cat === "all" ? "/" : `/${CAT_SLUG[cat]}`);
   };
 
   // 탭이 가로 스크롤 가능함을 알리는 우측 페이드 — 끝에 닿으면 숨김

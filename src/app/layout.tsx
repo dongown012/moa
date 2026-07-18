@@ -50,6 +50,21 @@ export default function RootLayout({
         />
       </head>
       <body>
+        {/* 검색엔진용 구조화 데이터 — 사이트 정체를 기계가 읽을 수 있게 선언 */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "모아",
+              alternateName: "모아 — 소셜섹터 인덱스",
+              url: "https://moa-social.vercel.app",
+              description: DESCRIPTION,
+              inLanguage: "ko",
+            }),
+          }}
+        />
         {children}
         <Analytics />
       </body>
