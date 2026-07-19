@@ -21,6 +21,23 @@ async function deleteItem(formData: FormData) {
   revalidatePath("/");
 }
 
+// 모아 픽 토글 — 좋은 글을 /picks 큐레이션에 올리거나 내림
+async function togglePick(formData: FormData) {
+  "use server";
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret || formData.get("key") !== secret) return;
+  const id = Number(formData.get("id"));
+  const sql = getDb();
+  if (!sql || !Number.isInteger(id)) return;
+  if (formData.get("picked") === "1") {
+    await sql`delete from picks where item_id = ${id}`;
+  } else {
+    await sql`insert into picks (item_id) values (${id}) on conflict (item_id) do nothing`;
+  }
+  revalidatePath("/admin");
+  revalidatePath("/picks");
+}
+
 const box: React.CSSProperties = {
   maxWidth: 960,
   margin: "40px auto",
@@ -76,9 +93,11 @@ export default async function AdminPage({
   const [totals, recent, topClicks, dailyClicks, subscribers] = await Promise.all([
     sql`select source, count(*)::int as cnt, max(created_at)::date::text as last
         from items group by source order by cnt desc`,
-    sql`select id::int as id, title, source, category,
-               to_char(published_at, 'YYYY-MM-DD') as published_at, url
-        from items order by id desc limit 60`,
+    sql`select i.id::int as id, i.title, i.source, i.category,
+               to_char(i.published_at, 'YYYY-MM-DD') as published_at, i.url,
+               (p.item_id is not null) as picked
+        from items i left join picks p on p.item_id = i.id
+        order by i.id desc limit 60`,
     // 최근 7일 인기 클릭 콘텐츠
     sql`select i.title, i.source, i.category, count(*)::int as clicks
         from clicks c join items i on i.id = c.item_id
@@ -164,8 +183,16 @@ export default async function AdminPage({
                 </a>
               </td>
               <td style={td}>{r.source as string}</td>
-              <td style={td}>
-                <form action={deleteItem}>
+              <td style={{ ...td, whiteSpace: "nowrap" }}>
+                <form action={togglePick} style={{ display: "inline-block", marginRight: 6 }}>
+                  <input type="hidden" name="id" value={r.id as number} />
+                  <input type="hidden" name="key" value={key} />
+                  <input type="hidden" name="picked" value={r.picked ? "1" : "0"} />
+                  <button type="submit" style={r.picked ? { color: "#1D40C8", fontWeight: 700 } : undefined}>
+                    {r.picked ? "★픽됨" : "☆픽"}
+                  </button>
+                </form>
+                <form action={deleteItem} style={{ display: "inline-block" }}>
                   <input type="hidden" name="id" value={r.id as number} />
                   <input type="hidden" name="key" value={key} />
                   <button type="submit">삭제</button>

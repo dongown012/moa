@@ -456,7 +456,7 @@ export default function HomeClient({
             콘텐츠 저작권은 각 출처에 있습니다.
           </span>
           <span className="mono">
-            SOURCES {stats.srcs} · UPDATED DAILY
+            <a href="/picks">PICKS</a> · <a href="/archive">ARCHIVE</a> · SOURCES {stats.srcs}
           </span>
         </div>
       </footer>

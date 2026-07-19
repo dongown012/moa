@@ -150,6 +150,27 @@ footer{padding:28px 0;font-family:var(--sans);font-size:12px;color:var(--ink-30)
 footer .mono{font-size:11.5px;letter-spacing:.02em}
 footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
 
+/* ── 서브 페이지 공통 (아카이브·픽) ── */
+.page{padding:48px 0 60px;min-height:60vh}
+.page-kicker{font-family:var(--mono);font-size:12px;color:var(--ink-60);letter-spacing:.06em;margin-bottom:16px}
+.page-title{font-size:clamp(30px,5vw,44px);font-weight:900;letter-spacing:-0.04em;line-height:1.15;word-break:keep-all}
+.page-title i{font-style:normal;color:var(--cobalt)}
+.page-desc{font-size:15px;line-height:1.75;color:var(--ink-60);max-width:620px;margin-top:16px;word-break:keep-all}
+.arch-months{margin-top:36px;border-top:1px solid var(--rule)}
+.arch-months li{border-bottom:1px solid var(--rule)}
+.arch-months a{display:block;padding:18px 4px;font-size:17px;font-weight:700;letter-spacing:-0.01em;transition:color .12s}
+.arch-months a:hover{color:var(--cobalt)}
+.arch-section{margin-top:44px}
+.arch-section h2{font-size:16px;font-weight:800;letter-spacing:-0.01em;border-bottom:2px solid var(--ink);padding-bottom:10px}
+.arch-section h2 .cnt{font-family:var(--mono);font-size:11px;color:var(--ink-30);margin-left:8px;font-weight:500;vertical-align:2px}
+.arch-list li{display:grid;grid-template-columns:44px 1fr;gap:14px;padding:14px 0;border-bottom:1px solid var(--rule);align-items:baseline}
+.arch-date{font-family:var(--mono);font-size:11.5px;color:var(--ink-30)}
+.arch-list a{font-size:15px;font-weight:600;line-height:1.5;word-break:keep-all}
+.arch-list a:hover{color:var(--cobalt)}
+.arch-list p{font-size:13px;color:var(--ink-60);line-height:1.6;margin-top:4px;word-break:keep-all}
+.arch-list small{display:block;font-size:12px;color:var(--ink-30);margin-top:4px}
+.picks-rows{margin-top:36px;border-top:2px solid var(--ink);border-left:none}
+
 /* ── 소개 페이지 ── */
 .about{padding:56px 0 20px}
 .about-kicker{font-family:var(--mono);font-size:12.5px;color:var(--ink-60);letter-spacing:.06em;margin-bottom:18px}

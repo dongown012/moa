@@ -54,4 +54,10 @@ export async function ensureSchema(sql: NonNullable<ReturnType<typeof getDb>>) {
       url        text primary key,
       created_at timestamptz not null default now()
     )`;
+  // 모아 픽 — 운영자가 오래 남길 글(인터뷰·커리어·좋은 기사)을 골라두는 큐레이션
+  await sql`
+    create table if not exists picks (
+      item_id    bigint primary key,
+      created_at timestamptz not null default now()
+    )`;
 }

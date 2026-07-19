@@ -148,3 +148,57 @@ export async function getItems(): Promise<{
   const fillers = MOCK_ITEMS.filter((i) => !liveCats.has(i.category));
   return { items: hideStaleEvents([...liveItems, ...fillers]), mode: "live" };
 }
+
+const ITEM_COLS = (sql: NonNullable<ReturnType<typeof getDb>>) => sql`
+  id::int as id, title, summary, source, url, category, extra,
+  to_char(published_at, 'YYYY-MM-DD') as published_at,
+  to_char(deadline, 'YYYY-MM-DD') as deadline`;
+
+// 아카이브: 수집 이력이 있는 월 목록 (YYYY-MM, 최신순)
+export async function getArchiveMonths(): Promise<string[]> {
+  const sql = getDb();
+  if (!sql) return [];
+  try {
+    const rows = await sql`
+      select distinct to_char(published_at, 'YYYY-MM') as m from items order by m desc`;
+    return rows.map((r) => r.m as string);
+  } catch {
+    return [];
+  }
+}
+
+// 아카이브: 해당 월의 전체 항목 (검색엔진이 색인할 수 있는 유일한 과거 기록)
+export async function getMonthItems(month: string): Promise<Item[]> {
+  const sql = getDb();
+  if (!sql || !/^\d{4}-\d{2}$/.test(month)) return [];
+  try {
+    const rows = await sql`
+      select ${ITEM_COLS(sql)} from items
+      where to_char(published_at, 'YYYY-MM') = ${month}
+      order by published_at desc, id desc`;
+    return (rows as unknown as Item[]).map((i) => ({
+      ...i,
+      summary: i.summary ? cleanSummary(i.summary) : null,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+// 모아 픽: 운영자가 골라둔 오래 남길 글 (최신 픽 순)
+export async function getPicks(): Promise<(Item & { picked_at: string })[]> {
+  const sql = getDb();
+  if (!sql) return [];
+  try {
+    const rows = await sql`
+      select ${ITEM_COLS(sql)}, to_char(p.created_at, 'YYYY-MM-DD') as picked_at
+      from picks p join items i on i.id = p.item_id
+      order by p.created_at desc`;
+    return (rows as unknown as (Item & { picked_at: string })[]).map((i) => ({
+      ...i,
+      summary: i.summary ? cleanSummary(i.summary) : null,
+    }));
+  } catch {
+    return [];
+  }
+}
