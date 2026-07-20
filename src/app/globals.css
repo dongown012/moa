@@ -44,9 +44,19 @@ h1 .accent{color:var(--cobalt)}
 .stats span:first-child{padding-left:0;border-left:none}
 
 /* ── 마감 스트립 ── */
-.strip{border-bottom:1px solid var(--rule);background:var(--paper-warm);overflow-x:auto}
-.strip-inner{display:flex;align-items:center;gap:0;min-width:max-content;padding:0 28px;max-width:1080px;margin:0 auto}
-.strip-label{font-family:var(--mono);font-size:11.5px;font-weight:600;letter-spacing:.08em;color:var(--red);padding:12px 20px 12px 0;border-right:1px solid var(--rule);white-space:nowrap}
+.strip{border-bottom:1px solid var(--rule);background:var(--paper-warm);overflow:hidden}
+.strip-inner{display:flex;align-items:center;gap:0;padding:0 28px;max-width:1080px;margin:0 auto}
+.strip-label{flex:none;font-family:var(--mono);font-size:11.5px;font-weight:600;letter-spacing:.08em;color:var(--red);padding:12px 20px 12px 0;border-right:1px solid var(--rule);white-space:nowrap}
+/* 전광판 티커: 같은 목록 두 벌이 이어 흐르며 순환. 마우스·터치 시 정지 */
+.strip-track{flex:1;min-width:0;display:flex;overflow:hidden}
+.strip-seq{flex:none;display:flex;min-width:max-content;animation:strip-scroll 48s linear infinite}
+.strip-track.paused .strip-seq{animation-play-state:paused}
+@keyframes strip-scroll{to{transform:translateX(-100%)}}
+@media (prefers-reduced-motion:reduce){
+  .strip-seq{animation:none}
+  .strip-track{overflow-x:auto}
+  .strip-seq[aria-hidden="true"]{display:none}
+}
 .strip a{font-family:var(--mono);font-size:12.5px;padding:12px 20px;border-right:1px solid var(--rule);white-space:nowrap;color:var(--ink-60);transition:color .12s}
 .strip a:hover{color:var(--ink)}
 .strip a b{font-weight:600;color:var(--cobalt);margin-right:8px}

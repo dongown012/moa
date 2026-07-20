@@ -88,6 +88,7 @@ export default function HomeClient({
   const [nlMsg, setNlMsg] = useState("");
   const [nlBusy, setNlBusy] = useState(false);
   const [visible, setVisible] = useState(BATCH); // 현재 화면에 그리는 항목 수
+  const [tickerPaused, setTickerPaused] = useState(false); // 마감 티커 정지(마우스·터치)
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   // 카테고리 딥링크: ?cat=job 으로 진입하면 해당 탭을 열고, 탭 전환 시 URL도 갱신
@@ -303,22 +304,35 @@ export default function HomeClient({
       <div className="strip" aria-label="마감 임박">
         <div className="strip-inner">
           <span className="strip-label">CLOSING SOON</span>
-          {closingSoon.map((i) => {
-            const d = dday(i.deadline!);
-            return (
-              <a
-                key={i.id}
-                href={i.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={d <= 5 ? "urgent" : ""}
-                onClick={() => trackClick(i.id)}
-              >
-                <b>D-{d}</b>
-                {i.title}
-              </a>
-            );
-          })}
+          {/* 신문 전광판처럼 천천히 흐름 — 같은 목록을 두 벌 두어 끊김 없이 순환 */}
+          <div
+            className={`strip-track${tickerPaused ? " paused" : ""}`}
+            onMouseEnter={() => setTickerPaused(true)}
+            onMouseLeave={() => setTickerPaused(false)}
+            onTouchStart={() => setTickerPaused(true)}
+          >
+            {[0, 1].map((seq) => (
+              <div className="strip-seq" key={seq} aria-hidden={seq === 1}>
+                {closingSoon.map((i) => {
+                  const d = dday(i.deadline!);
+                  return (
+                    <a
+                      key={i.id}
+                      href={i.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={d <= 5 ? "urgent" : ""}
+                      onClick={() => trackClick(i.id)}
+                      tabIndex={seq === 1 ? -1 : undefined}
+                    >
+                      <b>D-{d}</b>
+                      {i.title}
+                    </a>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
