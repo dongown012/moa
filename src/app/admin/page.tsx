@@ -38,6 +38,22 @@ async function togglePick(formData: FormData) {
   revalidatePath("/picks");
 }
 
+// URL로 픽 — 최근 60건에 없어도, 검색·아카이브·클릭 순위 어디서 찾은 기사든 원문 URL로 픽
+async function pickByUrl(formData: FormData) {
+  "use server";
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret || formData.get("key") !== secret) return;
+  const url = String(formData.get("url") ?? "").trim();
+  const sql = getDb();
+  if (!sql || !url) return;
+  await sql`
+    insert into picks (item_id)
+    select id from items where url = ${url}
+    on conflict (item_id) do nothing`;
+  revalidatePath("/admin");
+  revalidatePath("/picks");
+}
+
 const box: React.CSSProperties = {
   maxWidth: 960,
   margin: "40px auto",
@@ -98,11 +114,13 @@ export default async function AdminPage({
                (p.item_id is not null) as picked
         from items i left join picks p on p.item_id = i.id
         order by i.id desc limit 60`,
-    // 최근 7일 인기 클릭 콘텐츠
-    sql`select i.title, i.source, i.category, count(*)::int as clicks
+    // 최근 7일 인기 클릭 콘텐츠 (여기서 바로 픽할 수 있도록 id·픽 여부 포함)
+    sql`select i.id::int as id, i.title, i.source, i.category, count(c.*)::int as clicks,
+               (pk.item_id is not null) as picked
         from clicks c join items i on i.id = c.item_id
+        left join picks pk on pk.item_id = i.id
         where c.created_at > now() - interval '7 days'
-        group by i.id, i.title, i.source, i.category
+        group by i.id, i.title, i.source, i.category, pk.item_id
         order by clicks desc limit 15`.catch(() => []),
     // 최근 7일 일별 클릭 추이
     sql`select to_char(created_at at time zone 'Asia/Seoul', 'MM-DD') as day, count(*)::int as clicks
@@ -140,25 +158,46 @@ export default async function AdminPage({
           : dailyClicks.map((r) => `${r.day}(${r.clicks})`).join(" · ")}
         {" — "}방문·유입경로는 Vercel 대시보드 → Analytics 탭 참고
       </p>
-      <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: 32 }}>
+      <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: 12 }}>
         <thead>
-          <tr><th style={th}>클릭</th><th style={th}>분류</th><th style={th}>제목</th><th style={th}>출처</th></tr>
+          <tr><th style={th}>클릭</th><th style={th}>분류</th><th style={th}>제목</th><th style={th}>출처</th><th style={th}></th></tr>
         </thead>
         <tbody>
           {topClicks.length === 0 ? (
-            <tr><td style={td} colSpan={4}>아직 클릭 기록이 없습니다</td></tr>
+            <tr><td style={td} colSpan={5}>아직 클릭 기록이 없습니다</td></tr>
           ) : (
-            topClicks.map((r, i) => (
-              <tr key={i}>
+            topClicks.map((r) => (
+              <tr key={r.id as number}>
                 <td style={td}>{r.clicks as number}</td>
                 <td style={td}>{r.category as string}</td>
                 <td style={td}>{r.title as string}</td>
                 <td style={td}>{r.source as string}</td>
+                <td style={{ ...td, whiteSpace: "nowrap" }}>
+                  <form action={togglePick}>
+                    <input type="hidden" name="id" value={r.id as number} />
+                    <input type="hidden" name="key" value={key} />
+                    <input type="hidden" name="picked" value={r.picked ? "1" : "0"} />
+                    <button type="submit" style={r.picked ? { color: "#1D40C8", fontWeight: 700 } : undefined}>
+                      {r.picked ? "★픽됨" : "☆픽"}
+                    </button>
+                  </form>
+                </td>
               </tr>
             ))
           )}
         </tbody>
       </table>
+      <form action={pickByUrl} style={{ marginBottom: 32, display: "flex", gap: 6 }}>
+        <input type="hidden" name="key" value={key} />
+        <input
+          type="url"
+          name="url"
+          required
+          placeholder="원문 URL을 붙여넣어 픽 (검색·아카이브·목록 어디서든)"
+          style={{ flex: 1, padding: "6px 8px", border: "1px solid #ccc", fontFamily: "monospace", fontSize: 12 }}
+        />
+        <button type="submit">URL로 픽</button>
+      </form>
 
       <h2>뉴스레터 구독 신청 (최근 20)</h2>
       <p style={{ color: "#888", margin: "4px 0 12px" }}>
