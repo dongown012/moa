@@ -274,6 +274,9 @@ export default function HomeClient({
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
+          <a href="/picks" className="nav-link">
+            픽
+          </a>
           <a href="#nl" className="sub-link" onClick={openNewsletter}>
             WEEKLY 구독
           </a>
