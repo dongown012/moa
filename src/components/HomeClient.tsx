@@ -76,12 +76,14 @@ export default function HomeClient({
   mode,
   headlineId,
   initialCat,
+  picksCount = 0,
 }: {
   items: Item[];
   today: string;
   mode: DataMode;
   headlineId?: number;
   initialCat?: Category;
+  picksCount?: number;
 }) {
   const [activeCat, setActiveCat] = useState<Category | "all">(initialCat ?? "all");
   const [query, setQuery] = useState("");
@@ -373,6 +375,17 @@ export default function HomeClient({
               <span className="src">{headline.source}</span>
             </div>
           </article>
+        )}
+
+        {/* 픽 안내는 첫 화면에 — 300건을 끝까지 내리는 방문자는 거의 없으므로 상단에 얇게 */}
+        {picksCount > 0 && !query.trim() && (
+          <a className="picks-banner" href="/picks">
+            <span className="picks-banner-label">MOA PICKS</span>
+            <span className="picks-banner-text">
+              두고두고 읽을 만한 글 <b>{picksCount}</b>편을 모아뒀습니다
+            </span>
+            <span className="picks-banner-go">→</span>
+          </a>
         )}
 
         <div className="feed">

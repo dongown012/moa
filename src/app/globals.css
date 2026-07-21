@@ -87,6 +87,15 @@ h1 .accent{color:var(--cobalt)}
 }
 .headline-summary{font-size:15.5px;line-height:1.75;color:var(--ink-60);max-width:660px;word-break:keep-all;margin-bottom:14px}
 
+/* 픽 안내 배너 — 상단 노출용 한 줄 (지면을 밀어내지 않게 얇게) */
+.picks-banner{display:flex;align-items:center;gap:12px;margin-top:22px;padding:13px 16px;background:var(--paper-warm);border-left:3px solid var(--cobalt);transition:background .12s}
+.picks-banner:hover{background:#EFEFEA}
+.picks-banner-label{flex:none;font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.08em;color:var(--cobalt)}
+.picks-banner-text{flex:1;min-width:0;font-size:13.5px;color:var(--ink-60);word-break:keep-all}
+.picks-banner-text b{color:var(--ink);font-weight:700}
+.picks-banner-go{flex:none;font-family:var(--mono);font-size:14px;color:var(--ink-30)}
+.picks-banner:hover .picks-banner-go{color:var(--cobalt)}
+
 /* ── 피드 ── */
 .feed{padding-bottom:40px}
 .date-group{display:grid;grid-template-columns:120px 1fr;border-bottom:1px solid var(--rule)}

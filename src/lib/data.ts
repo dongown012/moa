@@ -185,6 +185,18 @@ export async function getMonthItems(month: string): Promise<Item[]> {
   }
 }
 
+// 픽 개수 — 홈 배너 노출 여부 판단용 (목록 전체를 가져올 필요 없음)
+export async function getPicksCount(): Promise<number> {
+  const sql = getDb();
+  if (!sql) return 0;
+  try {
+    const rows = await sql`select count(*)::int as n from picks`;
+    return (rows[0]?.n as number) ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 // 모아 픽: 운영자가 골라둔 오래 남길 글 (최신 픽 순)
 export async function getPicks(): Promise<(Item & { picked_at: string })[]> {
   const sql = getDb();

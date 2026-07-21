@@ -1,5 +1,5 @@
 import { after } from "next/server";
-import { collectAndStore, getItems } from "@/lib/data";
+import { collectAndStore, getItems, getPicksCount } from "@/lib/data";
 import { kstDateString } from "@/lib/dates";
 import HomeClient from "@/components/HomeClient";
 
@@ -9,7 +9,10 @@ import HomeClient from "@/components/HomeClient";
 export const revalidate = 3600;
 
 export default async function Home() {
-  const { items, mode, headlineId } = await getItems();
+  const [{ items, mode, headlineId }, picksCount] = await Promise.all([
+    getItems(),
+    getPicksCount(),
+  ]);
   if (mode === "db") {
     after(async () => {
       try {
@@ -21,5 +24,13 @@ export default async function Home() {
     });
   }
   const today = kstDateString();
-  return <HomeClient items={items} today={today} mode={mode} headlineId={headlineId} />;
+  return (
+    <HomeClient
+      items={items}
+      today={today}
+      mode={mode}
+      headlineId={headlineId}
+      picksCount={picksCount}
+    />
+  );
 }
