@@ -277,7 +277,7 @@ export default function HomeClient({
             />
           </div>
           <a href="/picks" className="nav-link">
-            픽
+            읽을거리
           </a>
           <a href="#nl" className="sub-link" onClick={openNewsletter}>
             WEEKLY 구독
